@@ -55,3 +55,5 @@ pusher==3.3.2
 google-cloud-storage==3.1.0
 
 modal==0.73.85
+
+gunicorn==23.0.0
