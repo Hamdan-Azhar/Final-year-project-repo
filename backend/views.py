@@ -548,11 +548,12 @@ class GetVideosView(APIView):
 
             total_size_mb += video.get('size', 0)
 
-            print("user id", video.get('user_id'))
+            # print("user id", video.get('user_id'))
 
             video_data.append({
                 'name': video_name,
-                'size': f'{video.get('size', 0):.2f} MB',
+                # 'size': f'{video.get('size', 0):.2f} MB',
+                'size': f"{video.get("size", 0):.2f} MB",
                 'url': url,
                 # 'asset_id': video.get('asset_id', None)
             })
