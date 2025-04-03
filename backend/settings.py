@@ -63,7 +63,15 @@ MIDDLEWARE = [
 #     "http://localhost",
 #     "http://127.0.0.1",
 # ]
-CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default=[], cast=lambda v: [s.strip() for s in v.split(',')])
+
+# CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default=[], cast=lambda v: [s.strip() for s in v.split(',')])
+
+CORS_ALLOW_ALL_ORIGINS = config('CORS_ALLOW_ALL_ORIGINS', default=False, cast=bool)
+
+if CORS_ALLOW_ALL_ORIGINS:
+    CORS_ALLOWED_ORIGINS = []
+else:
+    CORS_ALLOWED_ORIGINS = config('CORS_ALLOWED_ORIGINS', default='', cast=lambda v: [s.strip() for s in v.split(',')] if v else [])
 
 # CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
