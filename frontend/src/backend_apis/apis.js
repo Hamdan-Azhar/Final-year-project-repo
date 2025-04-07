@@ -3,7 +3,9 @@ import Cookies from 'js-cookie';
 // const API_BASE_URL = "https://d39a-137-59-218-169.ngrok-free.ap"; // Replace with your base URL
 
 // const API_BASE_URL = "http://127.0.0.1:8000";
-const API_BASE_URL = "https://fyp-backend-9sn2.onrender.com";
+// const API_BASE_URL = "https://fyp-backend-9sn2.onrender.com";
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_BASE_URL;
+console.log("API_BASE_URL", API_BASE_URL);
 
 const apiUrls = {
   login: `${API_BASE_URL}/login/`,
