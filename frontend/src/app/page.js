@@ -39,13 +39,19 @@ export default function ExamGuardPage() {
                 index === currentSlide ? 'opacity-100' : 'opacity-0'
               }`}
             >
-              <Image
+              {/* <Image
                 src={src}
                 alt={`Slide ${index + 1}`}
                 layout="fill"
                 objectFit="cover"
                 className="rounded-lg"
+              /> */}
+              <img
+                src={src}
+                alt={`Slide ${index + 1}`}
+                className="rounded-lg w-full h-full object-cover"
               />
+
             </div>
           ))}
 
