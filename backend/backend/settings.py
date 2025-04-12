@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 from pathlib import Path
 from decouple import config
 import json
+import modal
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -129,6 +130,7 @@ CHANNEL_LAYERS = {
     },
 }
 
+import modal.config
 from pymongo import MongoClient
 
 # Database - Using pymongo with MongoDB
@@ -212,3 +214,6 @@ GCS_BUCKET_NAME = config('GCS_BUCKET_NAME')
 MODAL_APP = config('MODAL_APP')
 DL_MODEL_FUNCTION = config('DL_MODEL_FUNCTION')
 ML_MODEL_FUNCTION = config('ML_MODEL_FUNCTION')
+
+modal.config.token_id = config('MODAL_TOKEN_ID')
+modal.config.token_secret = config('MODAL_TOKEN_SECRET')

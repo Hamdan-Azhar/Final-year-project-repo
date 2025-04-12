@@ -1,7 +1,2 @@
-backend/.env
-backend/backend/__pycache__
-backend/test.py
-backend/gcs.json
-AI models/__pycache__
 final_backend.zip
 frontend.zip

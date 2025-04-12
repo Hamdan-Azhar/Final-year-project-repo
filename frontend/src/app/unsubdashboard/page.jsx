@@ -44,16 +44,11 @@ const UnSubDashboard = () => {
         }
       });
     
-      if (response.status === 200) {  // Axios uses response.status instead of response.ok
-        const result = response.data;  // Axios response data is in .data property
-        console.log(result.message);
-        setClassificationResult(result.classification);
-        // alert('Video uploaded successfully!');
-      } else {
-        alert('Failed to upload video.');
-      }
+      const result = response.data;  // Axios response data is in .data property
+      // console.log(result.message);
+      setClassificationResult(result.classification);
     } catch (error) {
-      console.error('Error uploading video:', error);
+      console.error('Error uploading video:', error.response.data.error);
     }
   };
 

@@ -362,6 +362,8 @@ class UploadVideoView(APIView):
         try:
             # Check if a video file is included in the request
             model_type = request.data.get('model_type', None)
+
+            # print("model type", model_type)
             # print("model type", model_type)
             if 'video_file' not in request.FILES:
                 # print("---video_file----")

@@ -3,3 +3,5 @@
 Input a video and it will be classified by one of two classification pipelines.
 
 Built with React on frontend, Django on backend with classification pipelines codes written in python (google colab)
+
+[Link to the application](https://fyp-frontend-ajmm.onrender.com)
