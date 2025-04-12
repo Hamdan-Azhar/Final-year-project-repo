@@ -45,7 +45,7 @@ const UnSubDashboard = () => {
       });
     
       const result = response.data;  // Axios response data is in .data property
-      // console.log(result.message);
+      console.log(result.message);
       setClassificationResult(result.classification);
     } catch (error) {
       console.error('Error uploading video:', error.response.data.error);

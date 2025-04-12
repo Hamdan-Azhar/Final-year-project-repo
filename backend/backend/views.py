@@ -651,7 +651,6 @@ class UpdateSubscriptionView(APIView):
 
     def post(self, request):
         try:
-            user = request.user  # Assuming user authentication is done
             # print("--------user----------",user)
 
             subscription_status = request.data.get('subscription')
