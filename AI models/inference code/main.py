@@ -5,9 +5,9 @@ model_image = (
     "scikit-learn==1.6.1", "ultralytics==8.3.88", "scipy==1.14.1", "joblib==1.4.2", "opencv-python==4.11.0.86", "fastapi[standard]")
     .add_local_file("scaler_fold_2.joblib", remote_path="/root/scaler_fold_2.joblib")
     .add_local_file("lda_fold_2.joblib", remote_path="/root/lda_fold_2.joblib").add_local_file("svm_fold_2.joblib", remote_path="/root/svm_fold_2.joblib")
-    .add_local_file("best_model_fold_2.pth", remote_path="/root/best_model_fold_2.pth").add_local_file("scaler_angle_fold_2.joblib", remote_path="/root/scaler_angle_fold_2.joblib")
-    .add_local_file("scaler_dist_fold_2.joblib", remote_path="/root/scaler_dist_fold_2.joblib").add_local_file("scaler_hof_fold_2.joblib", remote_path="/root/scaler_hof_fold_2.joblib")
-    .add_local_file("scaler_ltp_fold_2.joblib", remote_path="/root/scaler_ltp_fold_2.joblib").add_local_file("scaler_vel_fold_2.joblib", remote_path="/root/scaler_vel_fold_2.joblib")
+    .add_local_file("best_model_fold_0.pth", remote_path="/root/best_model_fold_0.pth").add_local_file("scaler_angle_fold_0.joblib", remote_path="/root/scaler_angle_fold_0.joblib")
+    .add_local_file("scaler_dist_fold_0.joblib", remote_path="/root/scaler_dist_fold_0.joblib").add_local_file("scaler_hof_fold_0.joblib", remote_path="/root/scaler_hof_fold_0.joblib")
+    .add_local_file("scaler_ltp_fold_0.joblib", remote_path="/root/scaler_ltp_fold_0.joblib").add_local_file("scaler_vel_fold_0.joblib", remote_path="/root/scaler_vel_fold_0.joblib")
 )
 
 app = modal.App(name="model-deployment", image=model_image)
@@ -39,7 +39,7 @@ def predict_dl(video_url: str):
         "ltp": 512
     }
 
-    selected_features = ["dist", "angle", "hof", "vel", "ltp"]
+    selected_features = ["dist", "angle", "hof", "ltp", "vel"]
 
     silhouettes = segmentation(video_url, 41)
     keypoints = keypoints_extraction(video_url, 41)
@@ -49,7 +49,7 @@ def predict_dl(video_url: str):
     vel = velocity_feat_extraction(keypoints)
     ltp = ltp_feat_extraction(silhouettes)
     
-    X_test = np.concatenate((dist, angle, hof, vel, ltp), axis=1)
+    X_test = np.concatenate((dist, angle, hof, ltp, vel), axis=1)
     X_test = np.expand_dims(X_test, axis=0)
     
     standard_X_test = None
@@ -58,7 +58,7 @@ def predict_dl(video_url: str):
     for feature in selected_features:
           X_test_subset = X_test[:, :, prev_feat_length:prev_feat_length + selected_features_len[feature]].reshape(X_test.shape[0], -1)
 
-          scaler = joblib.load(f"scaler_{feature}_fold_2.joblib")
+          scaler = joblib.load(f"scaler_{feature}_fold_0.joblib")
           X_test_subset = scaler.transform(X_test_subset)
 
           X_test_subset = X_test_subset.reshape(X_test.shape[0], 40, -1)
@@ -105,12 +105,12 @@ def predict_dl(video_url: str):
     input_dim = X_test.shape[2]  # input dimension
     hidden_dim = 128 
     num_classes = len(CLASSES)
-    num_layers = 2
+    num_layers = 1
 
     model = BiLSTM(input_dim, hidden_dim, num_classes, num_layers).to(device)
 
     # Load the saved model state
-    model_path = "best_model_fold_2.pth"
+    model_path = "best_model_fold_0.pth"
     model.load_state_dict(torch.load(model_path, map_location=device))
     model.eval()
 
