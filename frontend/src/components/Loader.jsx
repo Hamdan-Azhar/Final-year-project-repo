@@ -7,9 +7,9 @@ const sizeMap = {
 };
 
 const Loader = ({
-  size = 5,        // Default matches button loader size (h-5 w-5)
-  color = "white", // Default matches button loader color
-  className = ""   // Additional classes
+  size = 5,       
+  color = "white", 
+  className = ""   
 }) => {
   const sizeClass = sizeMap[size] || "h-5 w-5";
   return (

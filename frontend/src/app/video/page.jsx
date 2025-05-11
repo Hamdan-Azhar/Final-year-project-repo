@@ -93,32 +93,6 @@ const VideoPage = () => {
                   <h2 className="text-3xl font-bold text-center">
                   Activity classified by {data.model_type}: {data.classification}
                   </h2>
-                  {/* <table className="w-full border text-sm border-collapse table-fixed">
-                    <thead>
-                      <tr className="border-b bg-black text-white-400">
-                        <th className="p-4 text-center">Person</th>
-                        <th className="p-4 text-center">Activity Detected</th>
-                      </tr>
-                    </thead> 
-                    <tbody>
-                      {Array.isArray(data?.classes) ? (
-                        data.classes
-                          .filter(item => typeof item === 'string' && item.trim() !== "")
-                          .map((item, index) => (
-                            <tr key={index} className="border-b border-gray-700">
-                              <td className="p-4">{index + 1}</td>
-                              <td className="p-4">{item.trim()}</td>
-                            </tr>
-                          ))
-                      ) : (
-                        <tr>
-                          <td colSpan="2" className="p-4 text-center">
-                            No data available
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table> */}
                 </div>
               )}
             </div>

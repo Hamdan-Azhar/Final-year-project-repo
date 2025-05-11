@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
@@ -20,9 +21,8 @@ const OtpPage = () => {
   useEffect(() => {
     const initializeSession = () => {
       const storedEmail = localStorage.getItem('signup_email');
-      // const storedEmail = "210966@students.au.edu.pk";
       const storedExpiry = localStorage.getItem('otp_expires_at');
-      // const storedExpiry = "2025-03-29T12:28:58.117Z";
+
       if (!storedEmail || !storedExpiry) {
         router.push('/Signup');
         return;
@@ -69,7 +69,6 @@ const OtpPage = () => {
     const payload = { 
       otp: otp,
       email: localStorage.getItem('signup_email') // Include email for verification
-      // email: "210966@students.au.edu.pk"
     };
 
     try {
@@ -97,7 +96,6 @@ const OtpPage = () => {
         }
         setError(data.error);
       } else {
-      console.error("Error during OTP verification:", error);
       setError("An error occurred. Please try again.");
       }
     } finally {
@@ -112,7 +110,6 @@ const OtpPage = () => {
     setError(''); // Clear any previous errors
 
     const email = localStorage.getItem('signup_email');
-    // const email = "210966@students.au.edu.pk"
     if (!email) {
       router.push('/Signup');
       return;
@@ -129,7 +126,6 @@ const OtpPage = () => {
 
       setTimeLeft(remainingSeconds);
       setIsExpired(remainingSeconds <= 0);
-      console.log("4")
     } catch (error) {
       if (error.response){
         const data = error.response.data;

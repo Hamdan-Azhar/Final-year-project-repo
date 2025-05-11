@@ -1,6 +1,5 @@
+"use client";
 
- "use client";
-// import '@fontsource/inter/variable.css';
 import { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
@@ -14,6 +13,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [confirmpassword, setConfirmPassword] = useState("");
   const [phoneNo, setPhoneNo] = useState("");
+  const [userType, setUserType] = useState("user"); // default to 'user'
   const [isChecked, setIsChecked] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false); 
@@ -31,15 +31,15 @@ export default function SignupPage() {
       return;
     }
   
-    // const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,20}$/;
-    // if (!passwordRegex.test(password)) {
-    //   setError(
-    //     "Password must be 8-20 characters long, with at least: " +
-    //     "1 uppercase letter, 1 lowercase letter, and 1 number."
-    //   );
-    //   setIsLoading(false);
-    //   return;
-    // }
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,20}$/;
+    if (!passwordRegex.test(password)) {
+      setError(
+        "Password must be 8-20 characters long, with at least: " +
+        "1 uppercase letter, 1 lowercase letter, and 1 number."
+      );
+      setIsLoading(false);
+      return;
+    }
   
     if (password !== confirmpassword) {
       setError("Password and Confirm Password do not match.😊");
@@ -59,8 +59,10 @@ export default function SignupPage() {
     const payload = {
       name: username,
       password: password,
+      confirm_password: confirmpassword,
       email: email,
       phoneNo: phoneNo,
+      role: userType,
     };
   
     try {
@@ -74,9 +76,7 @@ export default function SignupPage() {
         expiresAt.setSeconds(expiresAt.getSeconds() + response.data.otp_expires_in);
         localStorage.setItem('otp_expires_at', expiresAt.toISOString());
       }
-      console.log("activated");
       // Redirect to OTP page
-      // window.location.href = "/otp";
       router.push('/otp');
     } catch (error) {
       if (error.response){
@@ -94,12 +94,12 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="bg-black min-h-screen text-white" >
       {/* Header */}
       <Header/>
       {/* Main Form */}
       <div className="flex items-center justify-center py-12">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-sm text-center">
           <h2 className="text-2xl font-semibold text-white text-center mb-6">
             Create an account
           </h2>
@@ -158,6 +158,17 @@ export default function SignupPage() {
                 placeholder="Type your phone number"
                 className="block w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-800 text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
               />
+            </div>
+
+            <div className="mb-4">
+              <select
+                value={userType}
+                onChange={(e) => setUserType(e.target.value)}
+                className="block w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-800 text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="user">User</option>
+                <option value="admin">Admin</option>
+              </select>
             </div>
 
             <div className="flex items-center mb-6">

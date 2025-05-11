@@ -27,31 +27,26 @@ export default function LoginPage() {
 
     try {
       const response = await axios.post(apiUrls.login, payload);
-
-      console.log(response?.data?.admin, "-----response-------------------------------------", response?.data.access_token);
-      console.log(response?.data?.subscription, "-----response-------------------------------------");
-
       Cookies.set('access_token', response.data.access_token, { expires: 7 }); // Expires in 7 days
       Cookies.set("refresh_token", response.data.refresh_token, { expires: 7, secure: true });
-      // Cookies.set("user_role", response.data.admin === "True" ? "admin" : "user", { expires: 7 });
-      // Cookies.set("subscription", response.data.subscription, { expires: 7 });
-      
+
       const redirectPath = response.data.admin === "True" ? "/admin" : 
       response.data.subscription === "True" ? "/subdashboard" : "/unsubdashboard";
-      console.log("---------response data subscription--------------------",response.data.subscription);
-      
+  
       if (response?.data?.admin === "True") {
-        console.log("---------admin---true--------------------");
         router.push(redirectPath);
       } else if (response?.data?.subscription === "True") {
-        console.log("---------subscription---true--------------------");
         router.push(redirectPath);
       } else {
         router.push(redirectPath);
       }
     } catch (error) {
       if (error.response){
-        setError(error.response.data.error);
+        if (error.response.data.needs_verification) {
+            router.push("/forget");  // Redirect to verification page
+        } else {
+            setError(error.response.data.error);
+        }
       } else{
         setError("An error occured in login. Please try again.");
       }
@@ -62,7 +57,9 @@ export default function LoginPage() {
 
   return (
     <div className="bg-black min-h-screen text-white">
+      {/* Header */}
       <Header/>
+      {/* Main Form */}
       <div className="flex min-h-screen items-center justify-center bg-black">
         <div className="w-full max-w-sm text-center">
           <h2 className="text-2xl font-semibold text-white mb-8">
@@ -78,9 +75,6 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit}>
             {/* Email Field */}
             <div className="mb-4">
-              {/* <label className="block text-sm mb-2" htmlFor="email">
-                Email
-              </label> */}
               <input
                 type="email"
                 id="email"
@@ -91,9 +85,6 @@ export default function LoginPage() {
             </div>
             {/* Password Field with Show/Hide */}
             <div className="mb-4">
-              {/* <label className="block text-sm mb-2" htmlFor="confirm-password font-inter">
-                Confirm Password
-              </label> */}
               <input
                 type="password"
                 id="confirm-password"
@@ -104,7 +95,7 @@ export default function LoginPage() {
             </div>
 
             {/* Forgot Password Link */}
-            <div className="text-right">
+            <div className="text-right mb-2">
               <Link href="/forget" className="text-sm text-blue-500 hover:underline">
                 Forgot your password?
               </Link>

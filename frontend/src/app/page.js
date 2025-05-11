@@ -1,14 +1,13 @@
 "use client";
 
-import Image from 'next/image';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 
 const images = [
-  '/heroImage/image1.jpg', // Replace with the actual image paths in the public folder
-  '/heroImage/image2.jpg',
-  '/heroImage/image3.avif'
+  '/heroImage/image1.jpeg', // Replace with the actual image paths in the public folder
+  '/heroImage/image2.jpeg',
+  '/heroImage/image3.jpeg'
 ];
 
 export default function ExamGuardPage() {
@@ -39,13 +38,6 @@ export default function ExamGuardPage() {
                 index === currentSlide ? 'opacity-100' : 'opacity-0'
               }`}
             >
-              {/* <Image
-                src={src}
-                alt={`Slide ${index + 1}`}
-                layout="fill"
-                objectFit="cover"
-                className="rounded-lg"
-              /> */}
               <img
                 src={src}
                 alt={`Slide ${index + 1}`}
@@ -68,18 +60,18 @@ export default function ExamGuardPage() {
       {/* Features Section */}
       <section className="text-center px-6 py-12 max-w-5xl mx-auto">
         <h3 className="text-2xl font-inter mb-6">Why choose ExamGuard?</h3>
-        <p className="text-gray-400 max-w-3xl mx-auto mb-12">ExamGuard is the most advanced solution for proctoring exams. Our AI technology can classify cheating behaviors ,allowing instructors to protect exams at scale without compromising exam integrity.</p>
+        <p className="text-gray-400 max-w-3xl mx-auto mb-12">ExamGuard is the most advanced solution for proctoring exams. Our AI technology can classify cheating behaviors, allowing instructors to protect exams at scale without compromising exam integrity.</p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div className="flex flex-col items-center">
             <img src="/heroimage2/image2.jpg" alt="Proctor exams at scale" className="w-50 h-50 mb-4" /> {/* Replace with actual icons */}
             <h4 className="text-xl font-semibold">Proctor exams at scale</h4>
-            <p className="text-gray-400 mt-2">Monitor multiple exam videos, ensuring a fair testing environment.</p>
+            <p className="text-gray-400 mt-2">Monitor multiple exam videos by storing videos in the cloud, ensuring a fair testing environment.</p>
           </div>
           <div className="flex flex-col items-center">
-            <img src="/heroimage2/image3.jpg" alt="Detect cheating behavior" className="w-50 h-50 mb-4" /> {/* Replace with actual icons */}
+            <img src="/heroimage2/image3.jpg" alt="Detect cheating behavior" className="w-50 h-52 mb-4" /> {/* Replace with actual icons */}
             <h4 className="text-xl font-semibold">Detect cheating behavior</h4>
-            <p className="text-gray-400 mt-2">Use our advanced machine learning and deep learning algorithms to detect suspicious actions during exams.</p>
+            <p className="text-gray-400 mt-2">Use our advanced machine learning and deep learning pipelines to detectsuspicious actions during exams.</p>
           </div>
           <div className="flex flex-col items-center">
             <img src="/heroimage2/image1.jpg" alt="Get video analysis" className="w-50 h-50 mb-4" /> {/* Replace with actual icons */}

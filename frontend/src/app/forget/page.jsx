@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import axios from 'axios';
-import Image from 'next/image';
 import Link from 'next/link';
 import apiUrls from "../../backend_apis/apis";
 import Header from '@/components/Header';
@@ -20,7 +19,6 @@ export default function ForgotPassword() {
     setIsLoading(true);
     try {
       const response = await axios.post(apiUrls.resend_otp, { email });
-      console.log(response.status, "----response.ok-------------", response.data);
       // Store email in localStorage before redirect
       localStorage.setItem('signup_email', email);
       
@@ -46,27 +44,26 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen bg-black text-gray-300 flex flex-col items-center">
-      {/* Navbar */}
+    <div className="bg-black min-h-screen text-white">
+      {/* Header */}
       <Header/>
-      {/* Card Wrapper for Main Content */}
-      <div className="flex flex-col items-center justify-center flex-grow w-full px-4 mt-4">
-        <div className="w-full max-w-sm bg-black p-6 rounded-lg shadow-lg">
-          {/* Centered Title */}
-          <h2 className="text-2xl font-semibold text-white text-center mb-6">
-            Forgot your password?
+      {/* Main Form */}
+      <div className="flex min-h-screen items-center justify-center bg-black">
+        <div className="w-full max-w-sm text-center">
+          <h2 className="text-2xl font-semibold text-white mb-4">
+            Forget your password?
           </h2>
-          {/* Left-Aligned Description and Form */}
-          <div className="w-full text-center space-y-4">
-            {/* Error Message */}
-            {error && (
-              <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
-            )}
-            <p className="text-sm">
-              Enter your email address and we&apos;ll send you otp to reset your password.
-            </p>
 
-            <form className="space-y-4" onSubmit={handleSubmit}>
+           {/* Error Message */}
+           {error && (
+            <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
+          )}
+
+          <p className="text-sm mb-4">
+            Enter your email address and we&apos;ll send you otp to reset your password.
+          </p>
+          
+          <form className="space-y-4" onSubmit={handleSubmit}>
               {/* Email Field */}
               <div>
                 <input
@@ -88,17 +85,16 @@ export default function ForgotPassword() {
                 loading={isLoading}
                 className="w-full"
                 >
-                  Send Reset link
+                  Send otp
               </Button>
               </div>
-            </form>
+          </form>
             
-            {/* Back to Sign In Link */}
-            <div>
-              <p className="text-sm">
-                Back to <Link href="/login" className="text-blue-500 hover:underline">Login</Link>
-              </p>
-            </div>
+          {/* Back to Sign In Link */}
+          <div>
+            <p className="text-sm mt-3">
+              Back to <Link href="/login" className="text-blue-500 hover:underline">Login</Link>
+            </p>
           </div>
         </div>
       </div>

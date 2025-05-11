@@ -1,7 +1,6 @@
-
 "use client";
-// import '@fontsource/inter/variable.css';
-import { use, useState } from "react";
+
+import { useState } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
 import apiUrls from "../../backend_apis/apis";
@@ -23,14 +22,12 @@ const EditProfilePage = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      console.log("wirk");
       try {
         const response = await axios.get(apiUrls.get_profile, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
-        console.log(response.status, "----response.ok-------------", response.data);
         setUsername(response.data.name);
         setPassword(response.data.password);
         setConfirmPassword(response.data.password);
@@ -48,13 +45,13 @@ const EditProfilePage = () => {
     e.preventDefault();
     setIsLoading(true);
   
-  
-    // const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,20}$/;
-    // if (!passwordRegex.test(password)) {
-    //   setError("Password must be at least 8 characters long...");
-    //   setIsLoading(false);
-    //   return;
-    // }
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,20}$/;
+    if (!passwordRegex.test(password)) {
+      setError("Password must be 8-20 characters long, with at least: " +
+        "1 uppercase letter, 1 lowercase letter, and 1 number.");
+      setIsLoading(false);
+      return;
+    }
   
     if (password !== confirmpassword) {
       setError("Password and Confirm Password do not match.😊");
@@ -67,6 +64,7 @@ const EditProfilePage = () => {
     const payload = {
       name: username,
       password: password,
+      confirm_password: confirmpassword
     };
   
     try {
@@ -75,7 +73,6 @@ const EditProfilePage = () => {
           'Authorization': `Bearer ${token}`
         }
       });
-      console.log(response.status, "----response.ok-------------", response.data);
       // Redirect to login
       router.push('/login');
     } catch (error) {
@@ -98,8 +95,8 @@ const EditProfilePage = () => {
 
       {/* Main Form */}
       <div className="flex min-h-screen items-center justify-center bg-black">
-        <div className="w-full max-w-md">
-          <h2 className="text-2xl  text-center mb-6 font-inter">
+        <div className="w-full max-w-sm text-center">
+          <h2 className="text-2xl text-white mb-6 font-semibold">
             Edit your profile
           </h2>
 

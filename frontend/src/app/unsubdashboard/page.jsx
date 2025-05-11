@@ -1,10 +1,9 @@
-
 "use client";
+
 import { useState } from "react";
 import Cookies from 'js-cookie';
 import apiUrls from "../../backend_apis/apis";
 import Header from "@/components/Header";
-import Loader from "@/components/Loader";
 import withAuth from "@/lib/withAuth";
 import axios from "axios";
 import Button from "@/components/Button";
@@ -44,8 +43,7 @@ const UnSubDashboard = () => {
         }
       });
     
-      const result = response.data;  // Axios response data is in .data property
-      console.log(result.message);
+      const result = response.data;
       setClassificationResult(result.classification);
     } catch (error) {
       console.error('Error uploading video:', error.response.data.error);

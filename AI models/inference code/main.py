@@ -14,7 +14,6 @@ app = modal.App(name="model-deployment", image=model_image)
 
 
 @app.function(gpu="T4")
-# @modal.fastapi_endpoint(method="GET")
 def predict_dl(video_url: str):
     """
     Processes video and returns the activity performed in it using deep learning.
@@ -43,7 +42,7 @@ def predict_dl(video_url: str):
     selected_features = ["dist", "angle", "hof", "vel", "ltp"]
 
     silhouettes = segmentation(video_url, 41)
-    keypoints = keypoints_extraction(video_url, 40)
+    keypoints = keypoints_extraction(video_url, 41)
     hof = hof_extraction(silhouettes)
     dist = dist_feat_extraction(keypoints)
     angle = angle_feat_extraction(keypoints)
@@ -103,10 +102,10 @@ def predict_dl(video_url: str):
 
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    input_dim = X_test.shape[2]  # Replace with actual input dimension (num_features)
-    hidden_dim = 128  # Replace with your model's hidden_dim
-    num_classes = len(CLASSES)  # Replace with actual number of classes
-    num_layers = 1  # Replace with actual number of layers
+    input_dim = X_test.shape[2]  # input dimension
+    hidden_dim = 128 
+    num_classes = len(CLASSES)
+    num_layers = 2
 
     model = BiLSTM(input_dim, hidden_dim, num_classes, num_layers).to(device)
 
@@ -123,13 +122,11 @@ def predict_dl(video_url: str):
       output = model(input_tensor)
       prediction = torch.argmax(output, dim=1).item()
 
-    print("prediction done!")
     return CLASSES[prediction]
 
 
 
 @app.function(gpu="T4")
-# @modal.fastapi_endpoint(method="GET")
 def predict_ml(video_url: str):
     """
     Processes video and returns the activity performed in it using machine learning.
@@ -142,20 +139,14 @@ def predict_ml(video_url: str):
     """
     import numpy as np
     import joblib
-    import time 
 
     CLASSES = ["doing own work", "passing paper", "looking at other's work"]
 
     silhouettes = segmentation(video_url, 41)
-    # print("silhouettes extracted")
-    keypoints = keypoints_extraction(video_url, 40)
-    # print("keypoints extracted")
+    keypoints = keypoints_extraction(video_url, 41)
     hof = hof_extraction(silhouettes)
-    # print("hof extracted")
     dist_feat = dist_feat_extraction(keypoints)
-    # print("dist feat extracted")
     angle_feat = angle_feat_extraction(keypoints)
-    # print("angle feat extracted")
     feat_vect = np.concatenate((dist_feat, angle_feat, hof), axis=1).reshape(1, -1)
 
     scalar = joblib.load("scaler_fold_2.joblib")
@@ -167,14 +158,11 @@ def predict_ml(video_url: str):
     svm = joblib.load("svm_fold_2.joblib")
     prediction = svm.predict(feat_vect)[0]
     
-    print("prediction done!")
     return CLASSES[prediction]
-    
 
-
-# @app.function()
+# segmentation
 def segmentation(video_path, frames_no, batch_size=16):
-    """Extract silhouettes for middle 50 frames of a video and store in memory."""
+    """Extract silhouettes for middle {frames_no} frames of a video and store in memory."""
     import numpy as np
     import torch
     import torchvision
@@ -241,7 +229,7 @@ def segmentation(video_path, frames_no, batch_size=16):
         transform = torchvision.transforms.ToTensor()
         tensor_frames.append(transform(resized_frame).unsqueeze(0))  # Add batch dimension
 
-    cap.release()  # Release video capture to free memory
+    cap.release()
 
     # --- Process in batches ---
     for i in range(0, len(tensor_frames), batch_size):
@@ -262,7 +250,7 @@ def segmentation(video_path, frames_no, batch_size=16):
 
 # keypoints extraction 
 def keypoints_extraction(video_path, frames_no, batch_size=20):
-    """Extract keypoints from the middle frames using batch processing for speed."""
+    """Extract keypoints from the middle {frames_no} of frames using batch processing for speed."""
     import cv2
     import numpy as np
     from ultralytics import YOLO
@@ -285,7 +273,7 @@ def keypoints_extraction(video_path, frames_no, batch_size=20):
 
     # Select middle frames_no of frames
     if total_frames < frames_no:
-        raise ValueError(f"Video has only {total_frames} frames, but 50 frames are required.")
+        raise ValueError(f"Video has only {total_frames} frames, but 40 frames are required.")
 
     start_frame = (total_frames // 2) - (frames_no // 2)
     selected_frames = list(range(start_frame, start_frame + frames_no))
@@ -390,7 +378,7 @@ def hof_extraction(silhouettes):
     return hof_feat
 
 
-# ltp feat extraction
+# ltp features extraction
 def ltp_feat_extraction(frames):
     """
     Process silhouette frames and extract LTP features in parallel.
@@ -470,11 +458,7 @@ def velocity_feat_extraction(keypoints):
     # Compute Euclidean distance for velocity (frame-to-frame displacement)
     velocity_feat = np.linalg.norm(curr_coords - prev_coords, axis=2)  # Shape: (59, num_persons * num_keypoints)
 
-    # Pad velocity array to match the original number of frames 
-    velocity_feat = np.pad(velocity_feat, ((1, 0), (0, 0)), mode='constant', constant_values=0)
-
     return velocity_feat
-
 
 
 # angle features extraction
@@ -496,7 +480,7 @@ def angle_feat_extraction(keypoints):
         'N2': 7, 'LS2': 8, 'RS2': 9, 'LE2': 10, 'RE2': 11,
         'LW2': 12, 'RW2': 13,
     }
-
+    
     intra_angle_mapping = {
         "N1": ["RS1", "LS1"], "RS1": ["RE1"], "LS1": ["LE1"],
         "RE1": ["RW1"], "LE1": ["LW1"],
@@ -506,9 +490,9 @@ def angle_feat_extraction(keypoints):
     }
 
     inter_angle_mapping = {
-        "LW1": ["RW2"], "LE1": ["RE2"], "LS1": ["RS2"],
+        "LW1": ["RW2"], "LE1": ["RE2"], "LS1": ["RS1"],
     }
-
+    keypoints = keypoints[1:]
     num_frames = keypoints.shape[0]
     num_features = sum(len(targets) for targets in intra_angle_mapping.values()) + \
                    sum(len(targets) for targets in inter_angle_mapping.values())
@@ -579,7 +563,8 @@ def dist_feat_extraction(keypoints):
     inter_distance_mapping = {
         "LS1": ["RS2"], "LW1": ["RW2"], "LE1": ["RE2"], "N1": ["N2"],
     }
-
+    
+    keypoints = keypoints[1:]
     num_frames = keypoints.shape[0]
     num_features = len(intra_distance_mapping) + len(inter_distance_mapping)
 

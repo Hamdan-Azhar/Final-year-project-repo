@@ -1,5 +1,5 @@
-
 "use client";
+
 import React, { useEffect, useState } from "react";
 import apiUrls from "../../backend_apis/apis"
 import Cookies from 'js-cookie';
@@ -23,14 +23,10 @@ const AdminDashboard = () => {
           'Authorization': `Bearer ${token}`
         }
       });
-      console.log("-----response----=======-----------", response);
-      
       const data = response.data;
-      console.log("-----data----=======-----------", data);
-  
+
       if (Array.isArray(data.users)) {
         setMembers(data.users);
-        console.log(data.users, "---------=data.users======-----------");
       } else {
         setMembers([]);
       }
@@ -47,9 +43,7 @@ const AdminDashboard = () => {
           Authorization: `Bearer ${token}`,
         }
       });
-  
-      console.log("Member removed successfully");
-      
+
       setMembers((prevMembers) =>
         Array.isArray(prevMembers) ? prevMembers.filter((member) => member.email !== email) : prevMembers
       );
@@ -71,7 +65,7 @@ const AdminDashboard = () => {
   }, []);
 
   const handleactive = async (email, sub) => {
-    // console.log("Subscription status:", sub);
+
     try {
       await axios.post(apiUrls.update_subscription, 
         { subscription: sub, email }, 

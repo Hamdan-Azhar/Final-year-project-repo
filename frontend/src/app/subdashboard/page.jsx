@@ -4,10 +4,8 @@ import React, { useState, useEffect } from "react";
 import apiUrls from "../../backend_apis/apis";
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import withAuth from "@/lib/withAuth";
 import Header from "@/components/Header";
-import Loader from "@/components/Loader";
 import Button from "@/components/Button";
 import axios from "axios";
 
@@ -31,7 +29,6 @@ const SubDashboard = () => {
       });
   
       const data = response.data;
-      console.log("data", data.cloud_storage);
       setStorage(data.cloud_storage);
       setVideos(data.videos);
     } catch (error) {
@@ -44,7 +41,6 @@ const SubDashboard = () => {
   };
 
   useEffect(() => {
-    console.log("subdashboard called!");
     fetchData();
   }, []);
 
@@ -103,10 +99,8 @@ const SubDashboard = () => {
         console.log(response.data.message);
         setClassificationResult(response.data.classification);
         fetchData();
-          // alert('Video uploaded successfully!');
       } catch (error) {
         console.error('Error uploading video:', error);
-        // alert('An error occurred while uploading the video.');
       }
     };
    
@@ -158,15 +152,10 @@ const SubDashboard = () => {
         <div>
           <label className="text-lg font-medium block mb-4">Video uploads</label>
           <div className="p-1 rounded-lg border border-gray-700">
-            {/* <input
-              type="text"
-              placeholder="Search by date"
-              className="w-full mb-4 p-3 bg-[#26303B] text-white rounded-md border border-gray-700"
-            /> */}
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr>
-                  <th className="py-2 px-4 border-b border-gray-700">Person name</th>
+                  <th className="py-2 px-4 border-b border-gray-700">Video name</th>
                   <th className="py-2 px-4 border-b border-gray-700">Storage</th>
                   <th className="py-2 px-4 border-b border-gray-700">Action</th>
                 </tr>
@@ -188,18 +177,6 @@ const SubDashboard = () => {
               </tbody>
             </table>
 
-            {/* <input
-              type="file"
-              onChange={(e) => setSelectedVideo(e.target.files[0])}
-              className="mt-4 w-full p-2 bg-[#26303B] text-white rounded-md border border-gray-700"
-            />
-            <button
-              className="mt-4 px-6 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-              onClick={handleUploadVideo}
-            >
-              Upload a video
-            </button> */}
-            
             <div className="flex flex-col items-center justify-center">
             <label
               htmlFor="video-upload"

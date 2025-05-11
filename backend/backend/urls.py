@@ -29,25 +29,18 @@ from rest_framework_simplejwt.views import (
 urlpatterns = [
     path('signup/', UserSignUpView.as_view(), name='signup_view'),
     path('login/', UserLoginView.as_view(), name='login_view'),
-    # path('logout/', logout_view, name='logout_view'),
-    # path('check-auth/', check_auth_view, name='check_auth_view'),
     path('update-user/', UserView.as_view(), name='update_user'),
     path('upload-video/', UploadVideoView.as_view(), name='upload_video'),
     path('delete-video/<str:video_id>/', VideoView.as_view(), name='delete-video'),
     path('get-video/<str:video_id>/', VideoView.as_view(), name='get-video'),
     path('admin/', admin.site.urls),
-
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    # path('forget/', reset_password, name='reset-password'),
-
     path('get-videos/', GetVideosView.as_view(), name='get-videos'),
     path('get-users/', GetUsersView.as_view(), name='get-users'),
     path('get-user/', UserView.as_view(), name='get-users'),
     path('otp/', VerifyOtpView.as_view(), name='otp'),
     path('resend_otp/', ResendOtpView.as_view(), name='resend-otp'),
     path('update_subscription/', UpdateSubscriptionView.as_view(), name='update-subscription'),
-    
     path('delete-user/<str:email>/', DeleteUserView.as_view(), name='delete-user'),
-
 ]

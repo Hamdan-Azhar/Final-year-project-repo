@@ -14,7 +14,7 @@ from bson import ObjectId
 import random
 from backend.permissions import *
 from google.oauth2 import service_account
-
+from re import match
 
 class UserLoginView(APIView):
     def options(self, request, *args, **kwargs):
@@ -60,9 +60,10 @@ class UserLoginView(APIView):
 
             if user.get('blocked'):
                 return Response(
-                    {'error': 'You need to verify your email first'},
+                    {'error': 'You need to verify your email first', 'needs_verification': True},
                     status=status.HTTP_401_UNAUTHORIZED
                 )
+
             # Generate JWT tokens
             tokens = generate_jwt_tokens(user)
             print("subscription", tokens['is_subscribed'])
@@ -86,18 +87,45 @@ class UserSignUpView(APIView):
     def post(self, request):
         try:
             data = request.data
-            # print("data", data)
             name = data.get('name')
             email = data.get('email')
             password = data.get('password')
+            confirm_password = data.get('confirm_password')
             phone_number = data.get('phoneNo')
+            role = data.get('role')
 
-            if not name or not email or not password:
-                return Response({'error': 'Name, email, and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+            if not name or not email or not password or not phone_number or not role: 
+                return Response({'error': 'Name, email, password, phone number and role are required.'}, status=status.HTTP_400_BAD_REQUEST)
+            
+            # Validate password strength
+            password_regex = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,20}$'
+            if not match(password_regex, password):
+                return Response({
+                    'error': 'Password must be 8-20 characters long and contain at least one uppercase letter, one lowercase letter, and one number.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Optional confirm password match if provided
+            if confirm_password and password != confirm_password:
+                return Response({'error': 'Password and confirm password do not match.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Validate Pakistan phone number format
+            phone_regex = r'^(\+92|0092|0)?(3\d{2})(\d{7})$'
+            if not match(phone_regex, phone_number):
+                return Response({'error': 'Invalid Pakistan phone number format.'}, status=status.HTTP_400_BAD_REQUEST)
+
+            # Validate role
+            if role not in ['user', 'admin']:
+                return Response({'error': 'Role must be either "user" or "admin".'}, status=status.HTTP_400_BAD_REQUEST)
 
             collection = settings.MONGO_DB['users']
             existing_user = collection.find_one({'email': email})
+            existing_user_with_phone = collection.find_one({'phone_number': phone_number})
 
+            if existing_user_with_phone:
+                # check if user is blocked
+                if not existing_user_with_phone.get('blocked'):
+                    return Response({'error': 'A user with this phone number already exists.'}, status=status.HTTP_409_CONFLICT)
+        
             # check if user exists
             if existing_user:
                 # check if user is blocked
@@ -124,22 +152,35 @@ class UserSignUpView(APIView):
                 else:
                     return Response({'error': 'A user with this email already exists. Kindly enter correct details for email verification'}, status=status.HTTP_401_UNAUTHORIZED)
             else:
-                user_document = {
-                    'name': name,
-                    'email': email,
-                    'password': hashed_password,
-                    'phone_number': phone_number,
-                    'subscription': False,
-                    'otp': otp,
-                    'blocked': True,
-                    'otp_created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
-                    'otp_expires_at': otp_expires_at.strftime('%Y-%m-%d %H:%M:%S'),
-                    'otp_attempts': 0  # Track failed attempts
-                }
-
+                if role == 'user':
+                    user_document = {
+                        'name': name,
+                        'email': email,
+                        'password': hashed_password,
+                        'phone_number': phone_number,
+                        'subscription': False,
+                        'otp': otp,
+                        'blocked': True,
+                        'otp_created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        'otp_expires_at': otp_expires_at.strftime('%Y-%m-%d %H:%M:%S'),
+                        'otp_attempts': 0  # Track failed attempts
+                    }
+                else:
+                    user_document = {
+                        'name': name,
+                        'email': email,
+                        'password': hashed_password,
+                        'phone_number': phone_number,
+                        'admin': True,
+                        'otp': otp,
+                        'blocked': True,
+                        'otp_created_at': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                        'otp_expires_at': otp_expires_at.strftime('%Y-%m-%d %H:%M:%S'),
+                        'otp_attempts': 0  # Track failed attempts
+                    }
+                
                 collection.insert_one(user_document)
             
-
             # Send OTP via email
             try:
                 subject = 'Your account verification email'
@@ -147,7 +188,6 @@ class UserSignUpView(APIView):
                 send_mail(subject, message, settings.EMAIL_HOST_USER, [email])
             except Exception as e:
                 print(f"Email sending failed: {str(e)}")
-                # Continue even if email fails - you might want to handle this differently
 
             return Response({
                 'message': 'OTP sent to email.',
@@ -164,9 +204,6 @@ class DeleteUserView(APIView):
 
     def delete(self, request, email):
         try:
-            print("now deleting user")
-            # email = request.query_params.get('email')
-            print("user id", email)
             if not email:
                 return Response({'error': 'Video ID is required'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -183,7 +220,6 @@ class VerifyOtpView(APIView):
     def post(self, request):
         try:
             data = request.data
-            print("data", data)
             otp = data.get('otp')
             email = data.get('email')  # Email should be passed from frontend
             
@@ -195,20 +231,18 @@ class VerifyOtpView(APIView):
 
             collection = settings.MONGO_DB['users']
             user = collection.find_one({'email': email})
-            # print("1")
+
             if not user:
                 return Response(
                     {'error': 'No OTP session found. Please sign up again.'},
                     status=status.HTTP_404_NOT_FOUND
                 )
-            # print("user data", user)
             # Check if OTP is expired
             otp_expires_at = datetime.strptime(
                 user['otp_expires_at'], 
                 '%Y-%m-%d %H:%M:%S'
             )
             current_time = datetime.now()
-            # print("time zone", current_time, "otp expires at", otp_expires_at)
             if current_time > otp_expires_at:
                 # Clear the expired OTP
                 print("triggered otp expires")
@@ -306,7 +340,6 @@ class ResendOtpView(APIView):
     def post(self, request):
         try:
             data = request.data
-            # print("data", data)
             email = data.get('email')
 
             if not email:
@@ -358,13 +391,10 @@ class UploadVideoView(APIView):
     permission_classes = [IsSubscribedOrUnsubscribed]
     
     def post(self, request):
-        # print("-----start video uploading----")
         try:
             # Check if a video file is included in the request
             model_type = request.data.get('model_type', None)
 
-            # print("model type", model_type)
-            # print("model type", model_type)
             if 'video_file' not in request.FILES:
                 # print("---video_file----")
                 return Response({'error': 'No video file provided.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -372,15 +402,11 @@ class UploadVideoView(APIView):
             # current authenticated user
             user = request.user
             user_id = user._id
-            # user_id = "bro"
             video_file = request.FILES['video_file']
 
             # Initialize GCS client
-            # print("default google credentials", settings.GOOGLE_APPLICATION_CREDENTIALS)
-
             credentials = service_account.Credentials.from_service_account_info(settings.GOOGLE_APPLICATION_CREDENTIALS)
             client = storage.Client(credentials=credentials)
-            # client = storage.Client.from_service_account_json(settings.GCS_CREDENTIALS_PATH)
             bucket = client.bucket(settings.GCS_BUCKET_NAME)
 
             # Generate a unique filename for the video
@@ -392,8 +418,6 @@ class UploadVideoView(APIView):
 
             # Get the public URL of the uploaded video
             video_url = blob.public_url
-
-            # video_url =  "https://storage.googleapis.com/fyp-data-bucket/20250314205040_23_1.mp4"
 
             # Store the GCS file path, video URL, and user ID in MongoDB
             collection = settings.MONGO_DB['videos']
@@ -411,11 +435,7 @@ class UploadVideoView(APIView):
                 # print(f"Error during classification: {str(e)}")
                 return Response({'error': f"Error during classification - {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             
-            # nigga = True
-            # classification_result = None
-
             if user.subscription == False:
-            # if nigga == True:
                 blob.delete()
                 # Return a success response
                 return Response({
@@ -427,7 +447,6 @@ class UploadVideoView(APIView):
             else:
                 # Store the video document in MongoDB
                 video_document = {
-                    # 'user_id': ObjectId("6762ce83bc0c6756461cba41"),  # Store the user ID as an ObjectId
                     'user_id': user_id,
                     'video_name': video_filename,
                     'size': round(video_file.size / 1048576, 2),
@@ -529,47 +548,28 @@ class GetVideosView(APIView):
     def get(self, request):
         user = request.user  # Assuming user authentication is done
         user_id = user._id
-        # print("---user---------------",user)
-        
-        # user_id=ObjectId(user._id)
-        # user_id = ObjectId('6762ce83bc0c6756461cba41')
-
-        # print(ObjectId(user._id),"---model_names----",model_names)
-
+      
         # Fetch all videos for the user
         video_collection = settings.MONGO_DB['videos']
 
         videos = video_collection.find({'user_id': user_id})
-        # print("videos found",videos)
         total_size_mb = 0.0
         video_data = []
 
         for video in videos:
             url = video.get('url')
             video_name = video.get('video_name', 'Unknown')
-
             total_size_mb += video.get('size', 0)
-
-            # print("user id", video.get('user_id'))
 
             video_data.append({
                 'name': video_name,
-                # 'size': f'{video.get('size', 0):.2f} MB',
                 'size': f"{video.get('size', 0):.2f} MB",
-                # 'size': f"{video.get("size", 0):.2f} MB",
                 'url': url,
-                # 'asset_id': video.get('asset_id', None)
             })
-            # s += video['size']
-            # print("----s-----",s)
-        # print("video data", video_data)
         total_storage_gb = 10  # 50 GB
         total_storage_mb = total_storage_gb * 1024  # Convert GB to MB
         used_storage_mb = total_size_mb  # Sum all video sizes
-        # print("used storage mb", used_storage_mb)
         remaining_storage_gb = (total_storage_mb - used_storage_mb) / 1024
-        # print("remaning storage gb without", remaining_storage_gb)
-        # print("remaining storage mb",  f'{remaining_storage_gb:.2f} GB')
         used_storage_gb = used_storage_mb / 1024
 
         return Response({
@@ -626,20 +626,36 @@ class UserView(APIView):
             user_id = user._id
             name = data.get('name')
             password = data.get('password')  # Email should be passed from frontend
-            
-            if not name and not password:
+            confirm_password = data.get('confirm_password')
+
+            if not name or not password:
                 return Response(
                     {'error': 'At least name or password are required.'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
+            # Validate password strength
+            password_regex = r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[A-Za-z\d]{8,20}$'
+            if not match(password_regex, password):
+                return Response({
+                    'error': 'Password must be 8-20 characters long and contain at least one uppercase letter, one lowercase letter, and one number.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Optional confirm password match if provided
+            if confirm_password and password != confirm_password:
+                return Response({'error': 'Password and confirm password do not match.'}, status=status.HTTP_400_BAD_REQUEST)
+
             collection = settings.MONGO_DB['users']
+            existing_user = collection.find_one({'_id': ObjectId(user_id)})
+
+            if existing_user.get('name') == name and existing_user.get('password') == password:
+                return Response({'message': 'User updated successfully'}, status=status.HTTP_200_OK)
+            
             updated_result = collection.update_one({'_id': ObjectId(user_id)}, {'$set': {'name': name, 'password': password}})
 
             if updated_result.modified_count == 0:
                 return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
         
-            # print("users", user_data)
             return Response({'message': 'User updated successfully'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': f"Unexpected error - {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -651,8 +667,6 @@ class UpdateSubscriptionView(APIView):
 
     def post(self, request):
         try:
-            # print("--------user----------",user)
-
             subscription_status = request.data.get('subscription')
             email = request.data.get('email')
 
@@ -666,7 +680,7 @@ class UpdateSubscriptionView(APIView):
                 {'$set': {'subscription': subscription_status}}
             )
             res = users_collection.find_one({'email': email},)
-            print("----res-----------------",res)
+
             return Response({'message': 'Subscription status updated successfully.', 'subscription':res.get('subscription', None)}, status=status.HTTP_200_OK)
         except:
             return Response({'error': 'Failed to update subscription status.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -1,7 +1,6 @@
 // src/components/Header.jsx
 import React from 'react';
 import Link from 'next/link';
-import Button from './Button';
 
 const Header = ({ navItems = [], buttons = []}) => {
   return (
@@ -28,17 +27,6 @@ const Header = ({ navItems = [], buttons = []}) => {
             {button.name}
           </Link>
         ))}
-
-        {/* {buttons.map((button, index) => (
-          <Link key={index} href={button.url} passHref legacyBehavior>
-            <Button
-              className="px-4 py-2 rounded-lg text-lg font-medium hover:bg-blue-600 transition-colors"
-              onClick={button.onClick}
-            >
-              {button.name}
-            </Button>
-          </Link>
-        ))} */}
       </nav>
     </header>
   );

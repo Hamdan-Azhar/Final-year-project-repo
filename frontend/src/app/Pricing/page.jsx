@@ -42,7 +42,6 @@ export default function PricingPage() {
       <main className="flex flex-col items-center">
         <h1 className="text-2xl font-inter mt-8">Upgrade to Premium</h1>
         <p className="mt-2 mb-8">Please transfer your money here: Easypaisa 0334-1111318</p>
-        {/* text-gray-400 */}
         {/* Plans */}
         <div className="flex flex-col sm:flex-row space-y-6 sm:space-y-0 sm:space-x-6">
           {/* Free Plan */}
