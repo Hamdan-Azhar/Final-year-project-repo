@@ -41,11 +41,14 @@ def generate_jwt_tokens(user):
     access_token['user_id'] = user_id
     access_token['is_admin'] = user.get('admin', False)
     access_token['is_subscribed'] = user.get('subscription', False)
-
+    access_token['name'] = user.get('name', None)
+    access_token['is_faculty'] = user.get('faculty_member', False)
+    
     return {
         'refresh': str(refresh),
         'access': str(access_token),
         'user_id': user_id,
         'is_admin': str(user.get('admin', False)),
-        'is_subscribed': str(user.get('subscription', False))
+        'is_subscribed': str(user.get('subscription', False)),
+        'is_faculty': str(user.get('faculty_member', False))
     }

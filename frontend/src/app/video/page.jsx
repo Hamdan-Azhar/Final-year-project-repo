@@ -2,11 +2,12 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams } from 'next/navigation';
+import Button from "@/components/Button";
 import Cookies from 'js-cookie';
-import Header from "@/components/Header";
-import Loader from "@/components/Loader"; // Import the Loader component
-import apiUrls from "@/backend_apis/apis";
 import axios from "axios";
+import apiUrls from "@/backend_apis/apis";
+import Header from "@/components/Header";
+import Loader from "@/components/Loader";
 import withAuth from "@/lib/withAuth";
 
 const VideoPage = () => {
@@ -19,81 +20,65 @@ const VideoPage = () => {
 
   useEffect(() => {
     if (!videoName) return;
-    
+
     const fetchData = async () => {
-    try {
-      const response = await axios.get(`${apiUrls.get_video}${videoName}/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
+      try {
+        const response = await axios.get(`${apiUrls.get_video}${videoName}/`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-      setData(response.data);
-      setLoading(false);
-    } catch (error) {
-      if (error.response) {
-        // Handle specific HTTP error statuses
-        setError(error.response.data.error);
-      } else {
-        // Handle network errors or other issues
-        setError("Failed to fetch data");
+        setData(response.data);
+      } catch (error) {
+        setError(error.response?.data?.error || "Failed to fetch video data.");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    }
-  };
+    };
 
-  fetchData();
+    fetchData();
   }, [videoName]);
-
-  useEffect(() => {
-    if (data) {
-      console.log("Video data loaded:", data.url);
-    }
-  }, [data]);
 
   return (
     <Suspense fallback={<Loader size={8} />}>
-      <div className="min-h-screen bg-black text-white">
-        <Header navItems={[{ name: 'Dashboard', url: '/subdashboard' }]}/>
-        
+      <div className="min-h-screen bg-white text-gray-900">
+        <Header navItems={[{ name: 'Dashboard', url: '/owner_dashboard' }]} />
+
         <main className="p-8 flex justify-center">
           <div className="w-full max-w-6xl space-y-8">
-            {/* Video Title */}
-            <h1 className="text-3xl font-bold text-center">
-              {videoName}
-            </h1>
-            
-            {/* Video Section */}
+            <h1 className="text-3xl font-bold text-center">{videoName}</h1>
+
             <div className="relative w-full h-[500px] bg-gray-900 rounded-lg overflow-hidden flex justify-center items-center">
               {loading ? (
-                <Loader size={20} /> /* Large loader for video */
+                <Loader size={20} />
               ) : error ? (
-                <p className="text-center text-red-500">{error}</p>
+                <p className="text-red-500 text-center">{error}</p>
               ) : (
-                <video
-                  src={data?.url}
-                  controls
-                  className="w-full h-full"
-                >
-                  Your browser does not support the video tag.
-                </video>
+                <video src={data?.url} controls className="w-full h-full" />
               )}
             </div>
 
-            {/* Data Section */}
             <div className="rounded-md p-6">
               {loading ? (
                 <div className="flex justify-center">
-                  <Loader size={12} /> {/* Medium loader for data */}
+                  <Loader size={12} />
                 </div>
               ) : error ? (
-                <p className="text-center text-red-500">{error}</p>
+                <p className="text-red-500 text-center">{error}</p>
               ) : (
-                <div className="overflow-x-auto">
-                  <h2 className="text-3xl font-bold text-center">
-                  Activity classified by {data.model_type}: {data.classification}
-                  </h2>
-                </div>
+                    data.classification && (
+                  <a
+                    href={data.classification}
+                    download
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block mt-4"
+                  >
+                    <Button className="w-full">Download Classification Report</Button>
+                  </a>
+                )
+                // <h2 className="text-3xl font-bold text-center">
+                //   Activity classified by {data.model_type}: {data.classification}
+                // </h2>
               )}
             </div>
           </div>
@@ -101,6 +86,6 @@ const VideoPage = () => {
       </div>
     </Suspense>
   );
-}
+};
 
 export default withAuth(VideoPage);

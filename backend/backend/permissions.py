@@ -33,5 +33,23 @@ class IsSubscribedOrUnsubscribed(BasePermission):
         return bool(
             request.user and 
             request.user.is_authenticated and 
-            not request.user.admin
+            not request.user.admin and not request.user.faculty_member
+        )
+
+class IsUnsubscribedOrFaculty(BasePermission):
+    """Check if the user doesn't have a subscription."""
+    def has_permission(self, request, view):
+        return bool(
+            request.user and 
+            request.user.is_authenticated and 
+            not request.user.admin and not request.user.subscription
+        )
+    
+class IsFaculty(BasePermission):
+    """Check if the user doesn't have a subscription."""
+    def has_permission(self, request, view):
+        return bool(
+            request.user and 
+            request.user.is_authenticated and 
+            request.user.faculty_member
         )

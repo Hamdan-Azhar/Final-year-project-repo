@@ -23,11 +23,12 @@ const EditProfilePage = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        const response = await axios.get(apiUrls.get_profile, {
+        const response = await axios.get(apiUrls.get_user, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
+        console.log("response", response);
         setUsername(response.data.name);
         setPassword(response.data.password);
         setConfirmPassword(response.data.password);
@@ -68,7 +69,7 @@ const EditProfilePage = () => {
     };
   
     try {
-      const response = await axios.put(apiUrls.update_profile, payload, {
+      const response = await axios.put(apiUrls.update_user, payload, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -88,15 +89,15 @@ const EditProfilePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-white text-gray-900">
       {/* Header */}
-      <Header navItems={[{ name: 'Dashboard', url: '/subdashboard' }, { name: 'Pricing', url: '/Pricing' }]}
+      <Header navItems={[{ name: 'Dashboard', url: '/owner_dashboard' }, { name: 'Pricing', url: '/Pricing' }]}
               buttons={[{ name: 'Logout', url: '/login', onClick: () => Cookies.remove('access_token') }]}/>
 
       {/* Main Form */}
-      <div className="flex min-h-screen items-center justify-center bg-black">
-        <div className="w-full max-w-sm text-center">
-          <h2 className="text-2xl text-white mb-6 font-semibold">
+      <div className="flex items-center justify-center px-6 py-20">
+        <div className="w-full max-w-md">
+          <h2 className="text-3xl font-bold text-center mb-8">
             Edit your profile
           </h2>
 
@@ -105,39 +106,35 @@ const EditProfilePage = () => {
             <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
           )}
 
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <input
-                type="text"
-                id="username"
-                onChange={(e) => setUsername(e.target.value)}
-                value={username}
-                placeholder="Enter your username"
-                className="block w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-800 text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+          <form onSubmit={handleSubmit} className="space-y-4">
 
-            <div className="mb-4">
-              <input
-                type="password"
-                id="password"
-                onChange={(e) => setPassword(e.target.value)}
-                value={password}
-                placeholder="Enter your password"
-                className="block w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-800 text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+            {/* Username */}
+            <input
+              type="text"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your username"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
 
-            <div className="mb-4">
-              <input
-                type="password"
-                id="confirm-password"
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                value={confirmpassword}
-                placeholder="Confirm password"
-                className="block w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-800 text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+            {/* Password */}
+            <input
+              type="password"
+              value={password}
+              placeholder="Password"
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+
+            {/* Confirm Password */}
+            <input
+              type="password"
+              value={confirmpassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm password"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+
             <Button
               type="submit"
               loading={isLoading}

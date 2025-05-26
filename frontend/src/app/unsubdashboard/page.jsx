@@ -57,7 +57,7 @@ const UnSubDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-black text-white flex flex-col items-center">
+    <div className="min-h-screen bg-white text-gray-900 flex flex-col items-center">
       <Header navItems={[{ name: 'Pricing', url: '/Pricing' }, { name: 'Profile', url: '/edit_profile' }]}
               buttons={[{ name: 'Logout', url: '/login', onClick: () => Cookies.remove('access_token') }]}/>
 
@@ -68,7 +68,7 @@ const UnSubDashboard = () => {
 
         <label
           htmlFor="video-upload"
-          className="bg-blue-600 text-white py-2 px-4 rounded-xl hover:bg-blue-700 transition cursor-pointer"
+          className="bg-purple-600 text-white py-2 px-4 rounded-xl hover:bg-purple-700 transition cursor-pointer"
         >
           Upload a video
         </label>
@@ -80,36 +80,25 @@ const UnSubDashboard = () => {
           onChange={handleVideoUpload}
         />
 
+        {/* Preview & Submit */}
         {videoPreview && (
-          <div className="mt-6 p-6 bg-gray-800 rounded-lg shadow-lg w-full max-w-md">
-            <video
-              src={videoPreview}
-              controls
-              className="w-full h-56 rounded-lg shadow-md"
-            ></video>
-            <div className="flex gap-4 mt-6 justify-between">
-              <Button
-                onClick={handleUploadToServer}
-                className="w-full"
-              >
-              Submit Video
-              </Button>
-              <Button
-                  onClick={handleDeleteVideo}
-                  className="w-full"
-                >
-              Delete Video
-              </Button>
+          <div className="mt-10 bg-white rounded-xl p-6 shadow-md max-w-md mx-auto">
+            <video src={videoPreview} controls className="w-full h-56 rounded-lg mb-4" />
+            <div className="flex gap-4">
+              <Button onClick={handleUploadToServer} className="w-full">Submit Video</Button>
+              <Button onClick={handleDeleteVideo} className="w-full">Delete Video</Button>
             </div>
 
-            {/* Classification Result */}
             {classificationResult && (
-              <div className="mt-4 p-4 bg-gray-700 rounded-lg justify-center align-center">
-                <p className="text-md font-semibold">
-                <span className="text-white">Classification Result: </span>
-                <span className="text-white">{classificationResult}</span>
-                </p>
-              </div>
+              <a
+                href={classificationResult}
+                download
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block mt-4"
+              >
+                <Button className="w-full">Download Classification Report</Button>
+              </a>
             )}
           </div>
         )}

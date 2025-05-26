@@ -34,17 +34,22 @@ function withAuth(WrappedComponent) {
           return;
         }
 
-        if (parsedToken.is_admin && !["/admin", "/edit_profile"].includes(pathname)) {
+        if (parsedToken.is_admin && !["/admin", "/edit_profile", "/analytics", "/requests"].includes(pathname)) {
           router.push("/admin");
           return;
         }
 
-        if (parsedToken.is_subscribed && !["/subdashboard", "/video", "/edit_profile"].includes(pathname)) {
-          router.push("/subdashboard");
+        if (parsedToken.is_subscribed && !["/owner_dashboard", "/edit_profile", "/assign_add_faculty"].includes(pathname)) {
+          router.push("/owner_dashboard");
           return;
         }
 
-        if (!parsedToken.is_subscribed && !parsedToken.is_admin && !["/unsubdashboard", "/edit_profile"].includes(pathname)) {
+        if (parsedToken.is_faculty && !["/video", "/edit_profile", "/faculty_dashboard"].includes(pathname)) {
+          router.push("/faculty_dashboard");
+          return;
+        }
+
+        if (!parsedToken.is_subscribed && !parsedToken.is_admin && !parsedToken.is_faculty && !["/unsubdashboard", "/edit_profile"].includes(pathname)) {
           router.push("/unsubdashboard");
           return;
         }
@@ -57,8 +62,8 @@ function withAuth(WrappedComponent) {
 
     if (isLoading) {
       return (
-        <div className="flex justify-center items-center min-h-screen w-full">
-          <Loader size={14} />
+        <div className="flex bg-white justify-center items-center min-h-screen w-full">
+          <Loader size={14} color="black" />
         </div>
       );
     }

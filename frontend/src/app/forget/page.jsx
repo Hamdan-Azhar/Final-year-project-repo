@@ -44,13 +44,13 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="bg-black min-h-screen text-white">
+    <div className="bg-white min-h-screen text-gray-900">
       {/* Header */}
       <Header/>
       {/* Main Form */}
-      <div className="flex min-h-screen items-center justify-center bg-black">
-        <div className="w-full max-w-sm text-center">
-          <h2 className="text-2xl font-semibold text-white mb-4">
+      <div className="flex items-center justify-center px-6 py-20">
+        <div className="w-full max-w-md">
+          <h2 className="text-3xl font-semibold text-center mb-8">
             Forget your password?
           </h2>
 
@@ -59,7 +59,7 @@ export default function ForgotPassword() {
             <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
           )}
 
-          <p className="text-sm mb-4">
+          <p className="text-sm text-gray-600 mb-4">
             Enter your email address and we&apos;ll send you otp to reset your password.
           </p>
           
@@ -67,14 +67,12 @@ export default function ForgotPassword() {
               {/* Email Field */}
               <div>
                 <input
-                  id="email"
                   name="email"
                   type="email"
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  // className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                  className="block w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-800 text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter your email"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Email address"
                 />
               </div>
 
@@ -93,7 +91,7 @@ export default function ForgotPassword() {
           {/* Back to Sign In Link */}
           <div>
             <p className="text-sm mt-3">
-              Back to <Link href="/login" className="text-blue-500 hover:underline">Login</Link>
+              Back to <Link href="/login" className="text-indigo-600 hover:underline">Login</Link>
             </p>
           </div>
         </div>

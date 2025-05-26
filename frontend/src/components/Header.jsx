@@ -1,27 +1,37 @@
-// src/components/Header.jsx
 import React from 'react';
 import Link from 'next/link';
 
-const Header = ({ navItems = [], buttons = []}) => {
+const Header = ({ navItems = [], buttons = [], userInfo }) => {
   return (
-    <header className="w-full flex justify-between items-top py-4 px-6 border-b border-gray-700">
+    <header className="w-full flex justify-between items-center py-4 px-6 md:px-16 border-b border-gray-200 bg-white">
       <Link href="/">
-        <h1 className="text-2xl font-bold">ExamGuard</h1>
+        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">ExamGuard</h1>
       </Link>
-      <nav className="flex items-center justify-end space-x-6 text-gray-300 text-xs">
-        {/* Render navigation links */}
+
+      <nav className="flex items-center space-x-6">
+        {/* Navigation Links */}
         {navItems.map((item, index) => (
-          <Link key={index} href={item.url} className="text-lg font-medium hover:text-blue-500">
-            {item.name}
+          <Link key={index} href={item.url}>
+            <span className="relative text-base font-medium text-gray-700 cursor-pointer group">
+              {item.name}
+              <span className="absolute left-0 bottom-[-8px] w-0 h-1 bg-purple-600 transition-all duration-300 group-hover:w-full rounded-full"></span>
+            </span>
           </Link>
         ))}
 
-        {/* Render buttons */}
+        {/* User Info */}
+        {userInfo && (
+          <div className="text-base text-gray-700 font-medium bg-gray-100 px-3 py-1 rounded-full">
+            {userInfo.name} • {userInfo.role}
+          </div>
+        )}
+
+        {/* Buttons */}
         {buttons.map((button, index) => (
           <Link
             key={index}
             href={button.url}
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg text-lg font-medium hover:bg-blue-600 transition-colors"
+            className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-purple-700 transition"
             onClick={button.onClick}
           >
             {button.name}
@@ -35,50 +45,3 @@ const Header = ({ navItems = [], buttons = []}) => {
 export default Header;
 
 
-
-
-// // src/components/Header.jsx
-// import React from 'react';
-// import Link from 'next/link';
-// import Button from './Button';
-
-// const Header = ({ navItems = [], buttons = [] }) => {
-//   // Function to add delay to button clicks
-//   const handleClickWithDelay = async (originalOnClick) => {
-//     if (originalOnClick) {
-//       // Add 2 second delay before executing the original onClick
-//       await new Promise(resolve => setTimeout(resolve, 2000));
-//       await originalOnClick();
-//     }
-//   };
-
-//   return (
-//     <header className="w-full flex justify-between items-top py-4 px-6 border-b border-gray-700">
-//       <Link href="/">
-//         <h1 className="text-2xl font-bold cursor-pointer">ExamGuard</h1>
-//       </Link>
-//       <nav className="flex items-center justify-end space-x-6 text-gray-300 text-xs">
-//         {/* Render navigation links */}
-//         {navItems.map((item, index) => (
-//           <Link key={index} href={item.url} className="text-lg font-medium hover:text-blue-500">
-//             {item.name}
-//           </Link>
-//         ))}
-
-//         {/* Render buttons with delay */}
-//         {buttons.map((button, index) => (
-//           <Link key={index} href={button.url} passHref legacyBehavior>
-//             <Button
-//               className="px-4 py-2 rounded-lg text-lg font-medium hover:bg-blue-600 transition-colors"
-//               onClick={() => handleClickWithDelay(button.onClick)}
-//             >
-//               {button.name}
-//             </Button>
-//           </Link>
-//         ))}
-//       </nav>
-//     </header>
-//   );
-// };
-
-// export default Header;

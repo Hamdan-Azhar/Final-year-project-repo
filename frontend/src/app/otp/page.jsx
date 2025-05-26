@@ -146,11 +146,13 @@ const OtpPage = () => {
   };
 
   return (
-    <div className="bg-black min-h-screen text-white">
+    <div className="bg-white min-h-screen text-gray-900">
+      {/* Header */}
       <Header/>
-      <div className="flex min-h-screen items-center justify-center bg-black">
-        <div className="w-full max-w-sm text-center">
-          <h2 className="text-2xl font-semibold text-white mb-8">
+
+      <div className="flex items-center justify-center px-6 py-12">
+        <div className="w-full max-w-md">
+          <h2 className="text-3xl font-bold text-center mb-8">
             OTP verification
           </h2>
 
@@ -159,7 +161,7 @@ const OtpPage = () => {
           )}
 
           {!isExpired && (
-            <p className={`mb-4 ${isExpired ? 'text-red-500' : 'text-blue-500'}`}>
+            <p className={`text-center mb-4 ${isExpired ? 'text-red-500' : 'text-indigo-600'}`}>
             {`Time remaining: ${formatTime(timeLeft)}`}
           </p>
           )}
@@ -177,7 +179,7 @@ const OtpPage = () => {
                 onChange={(e) => setOtp(e.target.value)}
                 required
                 disabled={isExpired}
-                className="block w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-800 text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 placeholder="Enter your OTP"
               />
             </div>

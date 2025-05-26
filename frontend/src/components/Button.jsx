@@ -32,8 +32,8 @@ const Button = ({
       onClick={handleClick}
       disabled={disabled || showLoading}
       className={`
-        relative bg-blue-600 text-white py-2 px-4 rounded-xl 
-        hover:bg-blue-700 transition flex items-center justify-center
+        relative bg-purple-600 text-white py-2 px-4 rounded-xl 
+        hover:bg-purple-700 transition flex items-center justify-center
         ${showLoading ? "opacity-90 cursor-not-allowed" : ""}
         ${className}
       `}

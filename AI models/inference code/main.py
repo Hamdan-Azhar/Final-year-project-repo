@@ -2,7 +2,8 @@ import modal
 
 model_image = (
     modal.Image.debian_slim(python_version="3.11.11").apt_install("libgl1", "libglib2.0-0").pip_install("pandas==2.2.2", "numpy==1.26.4", 
-    "scikit-learn==1.6.1", "ultralytics==8.3.88", "scipy==1.14.1", "joblib==1.4.2", "opencv-python==4.11.0.86", "fastapi[standard]")
+    "scikit-learn==1.6.1", "ultralytics==8.3.88", "scipy==1.14.1", "joblib==1.4.2", "opencv-python==4.11.0.86", "fastapi[standard]","reportlab",
+        "google-cloud-storage","google-auth" )
     .add_local_file("scaler_fold_2.joblib", remote_path="/root/scaler_fold_2.joblib")
     .add_local_file("lda_fold_2.joblib", remote_path="/root/lda_fold_2.joblib").add_local_file("svm_fold_2.joblib", remote_path="/root/svm_fold_2.joblib")
     .add_local_file("best_model_fold_0.pth", remote_path="/root/best_model_fold_0.pth").add_local_file("scaler_angle_fold_0.joblib", remote_path="/root/scaler_angle_fold_0.joblib")
@@ -13,7 +14,7 @@ model_image = (
 app = modal.App(name="model-deployment", image=model_image)
 
 
-@app.function(gpu="T4")
+@app.function(gpu="T4", secrets=[modal.Secret.from_name("google cloud storage")])
 def predict_dl(video_url: str):
     """
     Processes video and returns the activity performed in it using deep learning.
@@ -28,6 +29,8 @@ def predict_dl(video_url: str):
     import joblib
     import torch
     import torch.nn as nn
+    import os
+    import json
 
     CLASSES = ["doing own work", "passing paper", "looking at other's work"]
 
@@ -42,7 +45,7 @@ def predict_dl(video_url: str):
     selected_features = ["dist", "angle", "hof", "ltp", "vel"]
 
     silhouettes = segmentation(video_url, 41)
-    keypoints = keypoints_extraction(video_url, 41)
+    keypoints, middle_frame_image, boxes, track_ids, frame_keypoints = keypoints_extraction(video_url, 41)
     hof = hof_extraction(silhouettes)
     dist = dist_feat_extraction(keypoints)
     angle = angle_feat_extraction(keypoints)
@@ -122,11 +125,15 @@ def predict_dl(video_url: str):
       output = model(input_tensor)
       prediction = torch.argmax(output, dim=1).item()
 
-    return CLASSES[prediction]
+    return generate_pdf_report(silhouettes, keypoints, middle_frame_image,
+                    boxes, track_ids, frame_keypoints,CLASSES[prediction], 
+                    json.loads(os.environ["GOOGLE_APPLICATION_CREDENTIALS"]), 
+                    os.environ["GCS_BUCKET_NAME"], "dl")
+    
 
 
 
-@app.function(gpu="T4")
+@app.function(gpu="T4", secrets=[modal.Secret.from_name("google cloud storage")])
 def predict_ml(video_url: str):
     """
     Processes video and returns the activity performed in it using machine learning.
@@ -139,11 +146,13 @@ def predict_ml(video_url: str):
     """
     import numpy as np
     import joblib
+    import os
+    import json
 
     CLASSES = ["doing own work", "passing paper", "looking at other's work"]
 
     silhouettes = segmentation(video_url, 41)
-    keypoints = keypoints_extraction(video_url, 41)
+    keypoints, middle_frame_image, boxes, track_ids, frame_keypoints = keypoints_extraction(video_url, 41)
     hof = hof_extraction(silhouettes)
     dist_feat = dist_feat_extraction(keypoints)
     angle_feat = angle_feat_extraction(keypoints)
@@ -158,7 +167,12 @@ def predict_ml(video_url: str):
     svm = joblib.load("svm_fold_2.joblib")
     prediction = svm.predict(feat_vect)[0]
     
-    return CLASSES[prediction]
+    return generate_pdf_report(silhouettes, keypoints, middle_frame_image,
+                        boxes, track_ids, frame_keypoints, CLASSES[prediction], 
+                        json.loads(os.environ["GOOGLE_APPLICATION_CREDENTIALS"]), 
+                        os.environ["GCS_BUCKET_NAME"])
+    
+
 
 # segmentation
 def segmentation(video_path, frames_no, batch_size=16):
@@ -277,6 +291,12 @@ def keypoints_extraction(video_path, frames_no, batch_size=20):
 
     start_frame = (total_frames // 2) - (frames_no // 2)
     selected_frames = list(range(start_frame, start_frame + frames_no))
+    
+    
+    middle_frame_image = None
+    middle_frame_boxes = None
+    middle_frame_track_ids = None
+    middle_frame_index = frames_no // 2
 
     # Placeholder for keypoints (frames_no, num_keypoints * 2, 2) → (x, y)
     keypoints = np.zeros((frames_no, NUM_KEYPOINTS * 2, 2), dtype=np.float32)
@@ -290,6 +310,7 @@ def keypoints_extraction(video_path, frames_no, batch_size=20):
         for frame_num in batch_indices:
             cap.set(cv2.CAP_PROP_POS_FRAMES, frame_num)
             success, frame = cap.read()
+
             if not success:
                 break
             batch_frames.append(frame)
@@ -299,19 +320,28 @@ def keypoints_extraction(video_path, frames_no, batch_size=20):
 
         # Process each frame in the batch
         for i, result in enumerate(results):
+            global_index = batch_start + i
             # Extract keypoints and track IDs
             frame_keypoints = result.keypoints.data.cpu().numpy() if result.keypoints is not None else []
             track_ids = result.boxes.id.int().cpu().tolist() if result.boxes.id is not None else []
+            boxes = result.boxes.xyxy.cpu().numpy() if result.boxes.xyxy is not None else []
+
+              # Store middle frame info
+            if global_index == middle_frame_index:
+                middle_frame_image = batch_frames[i]  # store BGR image
+                middle_frame_boxes = boxes            # shape: (2, 4)
+                middle_frame_track_ids = track_ids    # list of 2 IDs
+                middle_frame_keypoints = frame_keypoints
 
             # Ensure exactly 2 people are detected
             if len(track_ids) != 2:
-                keypoints[batch_start + i] = np.zeros((NUM_KEYPOINTS * 2, 2), dtype=np.float32)
+                keypoints[global_index] = np.zeros((NUM_KEYPOINTS * 2, 2), dtype=np.float32)
                 continue
 
             # Process keypoints for both persons
             for j, person_data in enumerate(frame_keypoints):  # Ensure only 2 persons
                 for k, index in enumerate(SPECIFIC_INDEXES):
-                    keypoints[batch_start + i, j * NUM_KEYPOINTS + k] = person_data[index][:2]
+                    keypoints[global_index, j * NUM_KEYPOINTS + k] = person_data[index][:2]
 
     cap.release()
 
@@ -328,7 +358,8 @@ def keypoints_extraction(video_path, frames_no, batch_size=20):
 
     end_time = time.time()
     print(f"Keypoints extraction completed in {end_time - start_time:.2f} seconds.")
-    return keypoints
+
+    return keypoints, middle_frame_image, middle_frame_boxes, middle_frame_track_ids, middle_frame_keypoints
 
 # hof features extraction
 def hof_extraction(silhouettes):
@@ -601,3 +632,518 @@ def dist_feat_extraction(keypoints):
                 feat_idx += 1
 
     return dist_feat
+
+
+def add_page_number(canvas_obj, doc):
+    page_num = canvas_obj.getPageNumber()
+    text = f"{page_num}"  # just the number
+
+    canvas_obj.setFont("Helvetica", 12)
+    width = canvas_obj.stringWidth(text, "Helvetica", 12)
+
+    # Position near bottom-right: 
+    # X = page width - margin - text width
+    # Y = small margin from bottom (e.g., 15)
+    margin = 40
+    x = doc.pagesize[0] - margin - width
+    y = 15
+    canvas_obj.drawString(x, y, text)
+
+def compute_ltp_for_visualization(image, radius=1, neighbors=8, threshold=5):
+    """
+    Compute Local Ternary Patterns (LTP) for a grayscale image efficiently.
+    Uses NumPy vectorized operations and SciPy shift to improve speed.
+    """
+    import cv2
+    import numpy as np
+    from scipy.ndimage import shift
+
+    image = image.astype(np.float32)
+    padded_image = cv2.copyMakeBorder(image, radius, radius, radius, radius, cv2.BORDER_REFLECT)
+
+    h, w = image.shape
+    ltp_pos = np.zeros((h, w), dtype=np.uint8)
+    ltp_neg = np.zeros((h, w), dtype=np.uint8)
+
+    offsets = [
+        (int(np.round(radius * np.sin(2 * np.pi * n / neighbors))),
+         int(np.round(radius * np.cos(2 * np.pi * n / neighbors))))
+        for n in range(neighbors)
+    ]
+
+    # Create stacked neighbor shifts
+    neighbors_matrix = np.stack([
+        shift(padded_image, shift=(dy, dx), mode='nearest')[radius:-radius, radius:-radius]
+        for dy, dx in offsets
+    ], axis=-1)  # Shape: (h, w, neighbors)
+
+    center_matrix = image[..., None]  # Shape: (h, w, 1)
+    diff = neighbors_matrix - center_matrix  # Compute differences
+
+    # Compute LTP codes using NumPy boolean indexing (Vectorized)
+    ltp_pos = np.sum((diff > threshold) * (1 << np.arange(neighbors)), axis=-1, dtype=np.uint8)
+    ltp_neg = np.sum((diff < -threshold) * (1 << np.arange(neighbors)), axis=-1, dtype=np.uint8)
+
+    return ltp_pos, ltp_neg
+
+
+def get_silhouette_contours(silhouette):
+
+    import cv2
+    import numpy as np
+    # Find contours in the silhouette image
+    contours, _ = cv2.findContours(silhouette, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    return contours[0] if contours else np.array([])
+
+def draw_optical_flow_on_contours(prev_frame, curr_frame, contours, step=16):
+
+    import cv2
+    import numpy as np
+
+    flow = cv2.calcOpticalFlowFarneback(prev_frame, curr_frame, None,
+                                        pyr_scale=0.5, levels=3, winsize=15,
+                                        iterations=3, poly_n=5, poly_sigma=1.2,
+                                        flags=0)
+
+    vis = np.zeros_like(prev_frame) # black background
+
+    # Convert to BGR for drawing arrows
+    vis_bgr = cv2.cvtColor(vis, cv2.COLOR_GRAY2BGR)
+
+    # Draw optical flow vectors on contour points
+    for contour_point in contours:  # Use every `step`-th point on the contour
+        x, y = contour_point[0]
+        flow_vector = flow[y, x]
+        end_point = (int(x + flow_vector[0]), int(y + flow_vector[1]))
+
+        cv2.arrowedLine(vis_bgr, (x, y), end_point, (0, 255, 0), 1, tipLength=0.4)
+
+    # Blend the silhouette with the black background and arrows
+    vis_bgr[prev_frame > 0] = 255
+
+    return vis_bgr
+
+
+def calculate_angle(start_point, end_point):
+    import math
+
+    delta_x = end_point[0] - start_point[0]
+    delta_y = end_point[1] - start_point[1]
+    angle = math.degrees(math.atan2(delta_y, delta_x))
+    return angle
+
+def generate_pdf_report(silhouettes, keypoints, middle_frame_image,
+                        boxes, track_ids, middle_frame_keypoints, classification_result,
+                        storage_credentials, gcs_bucket, model_type="ml"):
+    import cv2
+    import matplotlib.pyplot as plt
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image
+    from reportlab.lib.pagesizes import letter
+    from reportlab.lib.styles import getSampleStyleSheet
+    from io import BytesIO
+    from google.oauth2 import service_account
+    from google.cloud import storage
+    from datetime import datetime
+    import uuid
+    from reportlab.lib.enums import TA_CENTER
+    from reportlab.lib.styles import ParagraphStyle
+    import numpy as np
+
+    # Constants
+    middle_index = len(silhouettes) // 2
+    SPECIFIC_INDEXES = [0, 5, 6, 7, 8, 9, 10]
+    COLORS = {1: 'red', 2: 'blue', 3: 'yellow', 4: 'green'}
+    styles = getSampleStyleSheet()
+
+    centered_heading2_style = ParagraphStyle(
+        name='CenteredHeading2',
+        parent=styles['Heading2'],
+        alignment=TA_CENTER
+    )
+
+    # Create an in-memory PDF buffer
+    pdf_buffer = BytesIO()
+    doc = SimpleDocTemplate(pdf_buffer, pagesize=letter)
+    story = []
+
+    # Title
+    story.append(Paragraph('<font color="#9333ea">Exam Guard</font>', styles['Title']))
+    story.append(Paragraph("Activity Classification Report", styles['Title']))
+    story.append(Spacer(1, 20))
+
+    # --- Original Frame ---
+    buf_img = BytesIO()
+    plt.figure(figsize=(6, 4))
+    plt.imshow(cv2.cvtColor(middle_frame_image, cv2.COLOR_BGR2RGB))
+    plt.axis('off')
+    plt.tight_layout()
+    plt.savefig(buf_img, format='png', bbox_inches='tight', pad_inches=0)
+    plt.close()
+    buf_img.seek(0)
+
+    story.append(Paragraph("Original Middle Frame", centered_heading2_style))
+    story.append(Spacer(1, 8))
+    story.append(Image(buf_img, width=480, height=320))
+    story.append(Spacer(1, 170))
+
+    # --- Silhouette ---
+    middle_silhouette = silhouettes[middle_index].copy()
+    middle_silhouette[middle_silhouette == 0] = 255
+
+    buf_seg = BytesIO()
+    plt.figure(figsize=(6, 4))
+    plt.imshow(middle_silhouette, cmap='gray')
+    plt.axis('off')
+    plt.tight_layout()
+    plt.savefig(buf_seg, format='png', bbox_inches='tight', pad_inches=0)
+    plt.close()
+    buf_seg.seek(0)
+
+    story.append(Paragraph("Segmentation Result", centered_heading2_style))
+    story.append(Spacer(1, 8))
+    story.append(Image(buf_seg, width=480, height=320))
+    story.append(Spacer(1, 260))
+
+    buf_kp = BytesIO()
+
+    fig, ax = plt.subplots(figsize=(6, 4))
+    ax.imshow(cv2.cvtColor(middle_frame_image, cv2.COLOR_BGR2RGB))
+    ax.axis('off')
+
+    # Process keypoints for both persons
+    for person_data, track_id in zip(middle_frame_keypoints, track_ids):  # Ensure only 2 persons
+        for k, index in enumerate(SPECIFIC_INDEXES):
+            ax.scatter(person_data[index][:2][0], person_data[index][:2][1], color=COLORS.get(track_id, 'pink'), s=40)
+
+    for box, track_id in zip(boxes, track_ids):
+        x_min, y_min, x_max, y_max = box
+        ax.plot([x_min, x_max, x_max, x_min, x_min], [y_min, y_min, y_max, y_max, y_min], color= COLORS.get(track_id, 'green'), linewidth=2)
+        # Visualize track ID
+        ax.text(x_min, y_min - 20, f"ID {track_id}", color=COLORS.get(track_id, 'green'), fontsize=12, weight="bold")
+    
+    fig.tight_layout()
+    fig.savefig(buf_kp, format='png', bbox_inches='tight', pad_inches=0)
+    plt.close(fig)
+    buf_kp.seek(0)
+
+    story.append(Paragraph("Keypoints Detection Result", centered_heading2_style))
+    story.append(Spacer(1, 8))
+    story.append(Image(buf_kp, width=480, height=320))
+    story.append(Spacer(1, 260))
+
+    if model_type == "dl":
+        middle_silhouette = silhouettes[middle_index].copy()
+        # Create binary mask
+        _, binary_mask = cv2.threshold(middle_silhouette, 1, 255, cv2.THRESH_BINARY)
+        # Compute LTP features
+        ltp_pos, ltp_neg = compute_ltp_for_visualization(middle_silhouette, 1, 8, 5)
+
+        combined_ltp = ltp_pos + ltp_neg
+
+        # Normalize LTP codes for visualization
+        combined_ltp_norm = cv2.normalize(combined_ltp, None, 0, 255, cv2.NORM_MINMAX)
+
+        # Apply jet colormap
+        jet_colormap = plt.get_cmap('jet')
+        colored_ltp = jet_colormap(combined_ltp_norm)[:, :, :3]  # Convert to RGB (0-1 float)
+
+        # Create white background image
+        white_bg = np.ones_like(colored_ltp)
+
+        # Convert binary mask to 3-channel and boolean
+        mask_3d = binary_mask[:, :, np.newaxis] > 0
+
+        # Blend: where mask is True use colored_ltp, else use white
+        ltp_image = np.where(mask_3d, colored_ltp, white_bg)
+
+        # --- LTP frame ---
+        buf_ltp = BytesIO()
+        plt.figure(figsize=(6, 4))
+        plt.imshow(ltp_image)
+        plt.axis('off')
+        plt.tight_layout()
+        plt.savefig(buf_ltp, format='png', bbox_inches='tight', pad_inches=0)
+        plt.close()
+        buf_ltp.seek(0)
+
+        story.append(Paragraph("LTP features Visualization", centered_heading2_style))
+        story.append(Spacer(1, 8))
+        story.append(Image(buf_ltp, width=480, height=320))
+        story.append(Spacer(1, 260))
+
+    curr_silhouette = silhouettes[middle_index].copy()
+    prev_silhouette = silhouettes[middle_index - 5].copy()
+    contours = get_silhouette_contours(prev_silhouette)
+
+    flow_image = draw_optical_flow_on_contours(prev_silhouette, curr_silhouette, contours)
+    flow_image = 255 - flow_image
+
+    pink = np.array([255, 0, 255])  # Pure pink (R=255, G=0, B=255)
+    green = np.array([0, 255, 0])   # Pure green (R=0, G=255, B=0)
+
+    # Create a mask for all pink pixels (exact match)
+    pink_mask = (flow_image == pink).all(axis=-1)
+
+    # Replace pink with green
+    flow_image[pink_mask] = green
+
+    buf_hof = BytesIO()
+    plt.figure(figsize=(6, 4))
+    plt.imshow(flow_image)
+    plt.axis('off')
+    plt.tight_layout()
+    plt.savefig(buf_hof, format='png', bbox_inches='tight', pad_inches=0)
+    plt.close()
+    buf_hof.seek(0)
+
+    story.append(Paragraph("HOF features Visualization", centered_heading2_style))
+    story.append(Spacer(1, 8))
+    story.append(Image(buf_hof, width=480, height=320))
+    story.append(Spacer(1, 260))
+
+
+    indices = {
+        'N1': 0, 'LS1': 1, 'RS1': 2, 'LE1': 3, 'RE1': 4,
+        'LW1': 5, 'RW1': 6,
+        'N2': 7, 'LS2': 8, 'RS2': 9, 'LE2': 10, 'RE2': 11,
+        'LW2': 12, 'RW2': 13,
+    }
+
+
+    intra_angle_mapping = {
+        "N1": ["RS1", "LS1"],
+        "RS1": ["RE1"],
+        "LS1": ["LE1"],
+        "RE1": ["RW1"],
+        "LE1": ["LW1"],
+
+        "N2": ["RS2", "LS2"],
+        "RS2": ["RE2"],
+        "LS2": ["LE2"],
+        "RE2": ["RW2"],
+        "LE2": ["LW2"]
+
+    }
+
+    inter_angle_mapping = {
+        "LW1": ["RW2"],
+        "LE1": ["RE2"],
+        "LS1": ["RS2"]
+    }
+
+    middle_silhouette = silhouettes[middle_index].copy()
+
+    middle_silhouette = cv2.resize(middle_silhouette, (1280, 720))
+    _, middle_silhouette = cv2.threshold(middle_silhouette, 0, 255, cv2.THRESH_BINARY_INV)
+    middle_silhouette = cv2.cvtColor(middle_silhouette, cv2.COLOR_GRAY2BGR)
+
+    mid_keypoint = keypoints[middle_index]
+
+     # visualize keypoints
+    for x, y in mid_keypoint:
+        cv2.circle(middle_silhouette, (int(x), int(y)), 10, (0, 255, 0), -1)
+    # Draw angles with lines and arcs
+    for joint, connected_joints in intra_angle_mapping.items():
+
+        start_point = (int(mid_keypoint[indices[joint]][0]),
+                      int(mid_keypoint[indices[joint]][1]))
+
+        if np.array_equal(start_point, [0, 0]):
+          continue
+
+        # Base line through the joint (x-axis)
+        base_line_end = (start_point[0] + 50, start_point[1])
+        base_line_start = (start_point[0] - 50, start_point[1])
+        cv2.line(middle_silhouette, base_line_start, base_line_end, (0, 0, 0), 5)  # black base line
+
+        for connected_joint in connected_joints:
+
+            end_point = (int(mid_keypoint[indices[connected_joint]][0]),
+                        int(mid_keypoint[indices[connected_joint]][1]))
+
+            if np.array_equal(end_point, [0, 0]):
+              continue
+
+            # Draw the connecting line
+            cv2.line(middle_silhouette, start_point, end_point, (0, 0, 255), 5)  # Red connecting line
+
+            # Calculate angle between the base line and the connecting line
+            angle = calculate_angle(start_point, end_point)
+
+            # Draw the arc to represent the angle
+            cv2.ellipse(middle_silhouette, start_point, (20, 20), 0, 0, angle, (0, 0, 255), 5)
+
+     # Draw inter angles with lines and arcs
+    for joint, connected_joints in inter_angle_mapping.items():
+
+        start_point = (int(mid_keypoint[indices[joint]][0]),
+                      int(mid_keypoint[indices[joint]][1]))
+
+        if np.array_equal(start_point, [0, 0]):
+          continue
+
+        # Base line through the joint (x-axis)
+        base_line_end = (start_point[0] + 50, start_point[1])
+        base_line_start = (start_point[0] - 50, start_point[1])
+        cv2.line(middle_silhouette, base_line_start, base_line_end, (0, 0, 0), 5)  # Green base line
+
+        for connected_joint in connected_joints:
+            end_point = (int(mid_keypoint[indices[connected_joint]][0]),
+                        int(mid_keypoint[indices[connected_joint]][1]))
+
+            if np.array_equal(end_point, [0, 0]):
+              continue
+            # Draw the connecting line
+            cv2.line(middle_silhouette, start_point, end_point, (255, 0, 0), 5)  # Blue connecting line
+
+            # Calculate angle between the base line and the connecting line
+            angle = calculate_angle(start_point, end_point)
+
+            # Draw the arc to represent the angle
+            cv2.ellipse(middle_silhouette, start_point, (20, 20), 0, 0, angle, (255, 0, 0), 5)
+
+    buf_angle = BytesIO()
+    plt.figure(figsize=(6, 4))
+    plt.imshow(middle_silhouette)
+    plt.axis('off')
+    plt.tight_layout()
+    plt.savefig(buf_angle, format='png', bbox_inches='tight', pad_inches=0)
+    plt.close()
+    buf_angle.seek(0)
+
+    story.append(Paragraph("Angle features Visualization", centered_heading2_style))
+    story.append(Spacer(1, 8))
+    story.append(Image(buf_angle, width=480, height=320))
+    story.append(Spacer(1, 260))
+
+        
+    intra_distance_mapping = {
+        "N1": ["RW1"],
+        "LS1": ["LW1"],
+        "RE1": ["RW1"],
+        "LE1": ["LW1"],
+
+        "N2": ["RW2"],
+        "LS2": ["LW2"],
+        "RE2": ["RW2"],
+        "LE2": ["LW2"],
+    }
+
+    inter_distance_mapping = {
+        "LS1": ["RS2"],
+        "LW1": ["RW2"],
+        "LE1": ["RE2"],
+        "N1": ["N2"],
+    }
+
+    middle_silhouette = silhouettes[middle_index].copy()
+    
+    middle_silhouette = cv2.resize(middle_silhouette, (1280, 720))
+    _, middle_silhouette = cv2.threshold(middle_silhouette, 0, 255, cv2.THRESH_BINARY_INV)
+    middle_silhouette = cv2.cvtColor(middle_silhouette, cv2.COLOR_GRAY2BGR)
+
+    # visualize keypoints
+    for x, y in mid_keypoint:
+        cv2.circle(middle_silhouette, (int(x), int(y)), 10, (0, 255, 0), -1)
+
+    # Draw intra distance
+    for joint, connected_joints in intra_distance_mapping.items():
+            start_point = (int(mid_keypoint[indices[joint]][0]),
+                              int(mid_keypoint[indices[joint]][1]))
+            if np.array_equal(start_point, [0, 0]):
+               continue
+
+            for connected_joint in connected_joints:
+                end_point = (int(mid_keypoint[indices[connected_joint]][0]),
+                            int(mid_keypoint[indices[connected_joint]][1]))
+                if np.array_equal(end_point, [0, 0]):
+                  continue
+                cv2.line(middle_silhouette, start_point, end_point, (0, 0, 255), 5)  # Red line
+
+    # Draw inter-distance blue lines
+    for joint, connected_joints in inter_distance_mapping.items():
+        start_point = (int(mid_keypoint[indices[joint]][0]),
+                          int(mid_keypoint[indices[joint]][1]))
+        if np.array_equal(start_point, [0, 0]):
+          continue
+
+        for connected_joint in connected_joints:
+            end_point = (int(mid_keypoint[indices[connected_joint]][0]),
+                        int(mid_keypoint[indices[connected_joint]][1]))
+            if np.array_equal(end_point, [0, 0]):
+              continue
+            cv2.line(middle_silhouette, start_point, end_point, (255, 0, 0), 5)  # Blue line
+
+    buf_dist = BytesIO()
+    plt.figure(figsize=(6, 4))
+    plt.imshow(middle_silhouette)
+    plt.axis('off')
+    plt.tight_layout()
+    plt.savefig(buf_dist, format='png', bbox_inches='tight', pad_inches=0)
+    plt.close()
+    buf_dist.seek(0)
+
+    story.append(Paragraph("Distance features Visualization", centered_heading2_style))
+    story.append(Spacer(1, 8))
+    story.append(Image(buf_dist, width=480, height=320))
+
+    if model_type == "dl":
+        story.append(Spacer(1, 260))
+        curr_silhouette = silhouettes[middle_index].copy()
+        curr_silhouette = cv2.resize(curr_silhouette, (1280, 720))
+        _, curr_silhouette = cv2.threshold(curr_silhouette, 0, 255, cv2.THRESH_BINARY_INV)
+        heatmap = cv2.cvtColor(curr_silhouette, cv2.COLOR_GRAY2BGR)
+
+        curr_keypoint = keypoints[middle_index].copy()
+        prev_keypoint = keypoints[middle_index - 5].copy()
+
+        velocity = np.linalg.norm(curr_keypoint - prev_keypoint, axis=1)
+        norm_velocity = (velocity - velocity.min()) / (velocity.max() - velocity.min() + 1e-6)  # avoid divide by 0
+
+        threshold = 0.5  # Skip keypoints with velocity less than 5% of max
+        for (x, y), v in zip(curr_keypoint, norm_velocity):
+            if v < threshold:
+                continue  # Skip low-intensity keypoints
+            intensity = int(255 * v)
+            cv2.circle(heatmap, (int(x), int(y)), 10, (intensity, 0, 0), -1)  # Blue channel for velocity
+
+        buf_vel = BytesIO()
+        plt.figure(figsize=(6, 4))
+        plt.imshow(cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB))
+        plt.axis('off')
+        plt.tight_layout()
+        plt.savefig(buf_vel, format='png', bbox_inches='tight', pad_inches=0)
+        plt.close()
+        buf_vel.seek(0)
+
+        story.append(Paragraph("Velocity features Visualization", centered_heading2_style))
+        story.append(Spacer(1, 8))
+        story.append(Image(buf_vel, width=480, height=320))
+
+    story.append(Spacer(1, 20))
+
+    if model_type == "dl":
+        model_type = "Deep Learning Pipeline"
+    else:
+        model_type = "Machine Learning Pipeline"
+    # --- Classification Result ---
+    story.append(Paragraph("Classification Result", centered_heading2_style))
+    story.append(Spacer(1, 8))
+    story.append(Paragraph(f"<b>Predicted Activity by {model_type}:</b> {classification_result}", styles['Normal']))
+    story.append(Spacer(1, 12))
+
+    # Build PDF in memory
+    doc.build(story,onFirstPage=add_page_number, onLaterPages=add_page_number)
+    pdf_buffer.seek(0)
+
+    # Upload to GCS
+    credentials = service_account.Credentials.from_service_account_info(storage_credentials)
+    client = storage.Client(credentials=credentials)
+    bucket = client.bucket(gcs_bucket)
+
+    # Unique filename
+    filename = f"classification_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}.pdf"
+    blob = bucket.blob(filename)
+    blob.upload_from_file(pdf_buffer, content_type='application/pdf')
+
+    return blob.public_url

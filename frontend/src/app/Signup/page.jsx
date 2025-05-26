@@ -13,8 +13,10 @@ export default function SignupPage() {
   const [email, setEmail] = useState("");
   const [confirmpassword, setConfirmPassword] = useState("");
   const [phoneNo, setPhoneNo] = useState("");
+  const [location, setLocation] = useState("Karachi");
   const [userType, setUserType] = useState("user"); // default to 'user'
   const [isChecked, setIsChecked] = useState(false);
+  const [institution, setInstitution] = useState("institute");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false); 
   const router = useRouter();
@@ -62,6 +64,8 @@ export default function SignupPage() {
       confirm_password: confirmpassword,
       email: email,
       phoneNo: phoneNo,
+      institution: institution,
+      location: location,
       role: userType,
     };
   
@@ -94,84 +98,101 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="bg-black min-h-screen text-white" >
+    <div className="bg-white min-h-screen text-gray-900" >
       {/* Header */}
       <Header/>
-      {/* Main Form */}
-      <div className="flex items-center justify-center py-12">
-        <div className="w-full max-w-sm text-center">
-          <h2 className="text-2xl font-semibold text-white text-center mb-6">
+      
+      {/* Login Form */}
+      <div className="flex items-center justify-center px-6 py-20">
+        <div className="w-full max-w-md">
+          <h2 className="text-3xl font-bold text-center mb-8">
             Create an account
           </h2>
 
-          {/* Error Message */}
+          {/* Error */}
           {error && (
             <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
           )}
 
-          <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <input
-                type="email"
-                id="email"
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
-                className="block w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-800 text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
 
-            <div className="mb-4">
-              <input
-                type="text"
-                id="username"
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Enter your username"
-                className="block w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-800 text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+            {/* Username */}
+            <input
+              type="text"
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your username"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
 
-            <div className="mb-4">
-              <input
-                type="password"
-                id="password"
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                className="block w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-800 text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+            {/* Email */}
+            <input
+              type="email"
+              placeholder="Email address"
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
 
-            <div className="mb-4">
-              <input
-                type="password"
-                id="confirm-password"
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirm password"
-                className="block w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-800 text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+             {/* Institution */}
+            { userType !== "admin" && <input
+              type="text"
+              onChange={(e) => setInstitution(e.target.value)}
+              placeholder="Enter your institution name"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            /> }
 
-            <div className="mb-4">
-              <input
-                type="tel"
-                id="tel"
-                onChange={(e) => setPhoneNo(e.target.value)}
-                placeholder="Type your phone number"
-                className="block w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-800 text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+            {/* Location */}
+            <select
+              value={location}
+              onChange={(e) => setLocation(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="Karachi">Karachi</option>
+              <option value="Lahore">Lahore</option>
+              <option value="Islamabad">Islamabad</option>
+              <option value="Rawalpindi">Rawalpindi</option>
+              <option value="Peshawar">Peshawar</option>
+              <option value="Quetta">Quetta</option>
+            </select>
 
-            <div className="mb-4">
-              <select
-                value={userType}
-                onChange={(e) => setUserType(e.target.value)}
-                className="block w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-800 text-gray-300 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              >
-                <option value="user">User</option>
-                <option value="admin">Admin</option>
-              </select>
-            </div>
 
-            <div className="flex items-center mb-6">
+            {/* Password */}
+            <input
+              type="password"
+              placeholder="Password"
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+
+            {/* Confirm Password */}
+            <input
+              type="password"
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm password"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            
+            {/* Phone Number */}
+            <input
+              type="tel"
+              id="tel"
+              onChange={(e) => setPhoneNo(e.target.value)}
+              placeholder="Type your phone number"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+
+            {/* User Type */}
+            <select
+              value={userType}
+              onChange={(e) => setUserType(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              <option value="user">User</option>
+              <option value="admin">Admin</option>
+            </select>
+
+            {/* Check box */}
+            <div className="flex items-center">
               <input
                 type="checkbox"
                 id="terms"
@@ -179,15 +200,13 @@ export default function SignupPage() {
                 onChange={() => setIsChecked(!isChecked)}
                 className="text-blue-500 mr-2"
               />
-              <label htmlFor="terms" className="text-sm font-inter">
+              <label htmlFor="terms" className="text-sm text-gray-600">
                 I agree to the Terms of Service and Privacy Policy
               </label>
             </div>
-            <Button
-              type="submit"
-              loading={isLoading}
-              className="w-full"
-            >
+
+            {/* Signup Button */}
+            <Button type="submit" loading={isLoading} className="w-full">
               Sign up
             </Button>
           </form>

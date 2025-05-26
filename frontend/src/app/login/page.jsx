@@ -9,7 +9,6 @@ import Link from 'next/link';
 import Header from "@/components/Header";
 import Button from "@/components/Button";
 
-
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -20,35 +19,32 @@ export default function LoginPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const payload = {
-      email: email,
-      password: password,
-    };
+    const payload = { email, password };
 
     try {
       const response = await axios.post(apiUrls.login, payload);
-      Cookies.set('access_token', response.data.access_token, { expires: 7 }); // Expires in 7 days
+      Cookies.set('access_token', response.data.access_token, { expires: 7 });
       Cookies.set("refresh_token", response.data.refresh_token, { expires: 7, secure: true });
 
-      const redirectPath = response.data.admin === "True" ? "/admin" : 
-      response.data.subscription === "True" ? "/subdashboard" : "/unsubdashboard";
-  
-      if (response?.data?.admin === "True") {
-        router.push(redirectPath);
-      } else if (response?.data?.subscription === "True") {
-        router.push(redirectPath);
-      } else {
-        router.push(redirectPath);
-      }
+      const redirectPath =
+        response.data.admin === "True"
+          ? "/admin"
+          : response.data.subscription === "True"
+          ? "/owner_dashboard"
+          : response.data.faculty === "True"
+          ? "/faculty_dashboard"
+          : "/unsubdashboard";
+
+      router.push(redirectPath);
     } catch (error) {
-      if (error.response){
+      if (error.response) {
         if (error.response.data.needs_verification) {
-            router.push("/forget");  // Redirect to verification page
+          router.push("/forget");
         } else {
-            setError(error.response.data.error);
+          setError(error.response.data.error);
         }
-      } else{
-        setError("An error occured in login. Please try again.");
+      } else {
+        setError("An error occurred. Please try again.");
       }
     } finally {
       setLoading(false);
@@ -56,65 +52,57 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="bg-black min-h-screen text-white">
+    <div className="bg-white min-h-screen text-gray-900">
       {/* Header */}
-      <Header/>
-      {/* Main Form */}
-      <div className="flex min-h-screen items-center justify-center bg-black">
-        <div className="w-full max-w-sm text-center">
-          <h2 className="text-2xl font-semibold text-white mb-8">
-            Log in to ExamGuard
+      <Header />
+
+      {/* Login Form */}
+      <div className="flex items-center justify-center px-6 py-20">
+        <div className="w-full max-w-md">
+          <h2 className="text-3xl font-bold text-center mb-8">
+            Log in to <span className="text-purple-600">ExamGuard</span>
           </h2>
 
-           {/* Error Message */}
-           {error && (
+          {/* Error */}
+          {error && (
             <p className="text-red-500 text-sm mb-4 text-center">{error}</p>
           )}
 
-          {/* Login Form */}
-          <form onSubmit={handleSubmit}>
-            {/* Email Field */}
-            <div className="mb-4">
-              <input
-                type="email"
-                id="email"
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Enter your email"
-                className="block w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-800 text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-            {/* Password Field with Show/Hide */}
-            <div className="mb-4">
-              <input
-                type="password"
-                id="confirm-password"
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                className="block w-full px-4 py-3 border border-gray-600 rounded-xl bg-gray-800 text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Email */}
+            <input
+              type="email"
+              placeholder="Email address"
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
 
-            {/* Forgot Password Link */}
-            <div className="text-right mb-2">
-              <Link href="/forget" className="text-sm text-blue-500 hover:underline">
+            {/* Password */}
+            <input
+              type="password"
+              placeholder="Password"
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+
+            {/* Forgot Password */}
+            <div className="text-right text-sm">
+              <Link href="/forget" className="text-indigo-600 hover:underline">
                 Forgot your password?
               </Link>
             </div>
 
             {/* Login Button */}
-            <Button
-                type="submit"
-                loading={isLoading}
-                className="w-full"
-              >
-                Login
+            <Button type="submit" loading={isLoading} className="w-full">
+              Login
             </Button>
           </form>
 
-          {/* Sign Up Link */}
-          <div className="mt-6 text-center">
-            <p className="text-gray-400 text-sm">Don&apos;t have an account?</p>
-            <Link href="/Signup" className="text-sm text-blue-500 hover:underline">
+          {/* Sign Up */}
+          <div className="mt-6 text-center text-sm text-gray-600">
+            Don&apos;t have an account?{" "}
+            <Link href="/Signup" className="text-indigo-600 hover:underline">
               Sign up
             </Link>
           </div>
