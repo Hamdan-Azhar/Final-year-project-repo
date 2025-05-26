@@ -92,7 +92,7 @@ export default function PricingPage() {
       <main className="w-full max-w-4xl mt-12 px-4">
         <h1 className="text-4xl font-bold text-center mb-2">Upgrade to Premium</h1>
         <p className="text-center text-gray-600 mb-10">
-          Please transfer your payment via Easypaisa (2500/month for 1 faculty dashboard): <span className="font-semibold text-gray-800">0334-1111318</span>
+          Please transfer your payment via Easypaisa (2500/month for 10 faculty dashboards): <span className="font-semibold text-gray-800">0334-1111318</span>
         </p>
 
         {/* Plans */}

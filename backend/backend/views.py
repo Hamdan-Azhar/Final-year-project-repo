@@ -804,7 +804,12 @@ class UpdateSubscriptionView(APIView):
                 current_status = user.get('subscription', False)
                 new_status = not current_status
 
-                users_collection.update_one({'email': email}, {'$set': {'subscription': new_status}, 'subscribed_user_seats_left': 10})
+                users_collection.update_one({'email': email}, {'$set': {'subscription': new_status}})
+                if not users_collection.find_one({'email': email, 'subscribed_user_seats_left': {'$exists': True}}):
+                    users_collection.update_one(
+                        {'email': email},
+                        {'$set': {'subscribed_user_seats_left': 10}}
+                    )
                 # Compose email
                 subject = 'Subscription Status Updated'
                 if new_status:
