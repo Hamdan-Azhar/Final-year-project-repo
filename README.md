@@ -1,132 +1,180 @@
-# 🎓 Student Activity Classification System (Final Year Project)
+# 🎓 Intelligent Group Interactive Surveillance and Management System  (Final Year Project)
 
 **An intelligent AI-powered system for recognizing student activities from classroom video footage using advanced machine learning and deep learning pipelines.**
 
-[🔗 Live Demo](https://fyp-frontend-ajmm.onrender.com)  
-🎬 [Watch Video Demo](#) <!-- Replace with your actual YouTube/demo link -->
-
----
+🔗 [ **Live Demo**](https://fyp-frontend-ajmm.onrender.com)  
 
 ## 🚀 Overview
 
-This project is a web-based platform built as part of our **Final Year Project**, aimed at automating the classification of student activities like **passing paper**, **looking at others' work**, and **doing own work** in a classroom setting. The system leverages two separate systems: **machine learning based pipeline** and **deep learning based pipeline** for classification.
+This Computer Vision focused project is a web-based platform, aimed at automating the classification of student activities like **passing paper**, **looking at others' work**, and **doing own work** in a classroom setting. The system leverages two separate systems: **machine learning based pipeline** and **deep learning based pipeline** for classification. The user selects the pipeline type and inputs a video of two students performing an activity. The system produces a pdf report as output which includes visualizations of segmentation, keypoints detection and extracted features as well as activity classified by the pipeline. A total of 90 videos—approximately 75 custom and the rest from academic sources—were used for training and testing. For each video, the middle 40 frames were selected for classification. Three-fold cross-validation was performed to evaluate the pipelines.
 
-It combines:
-- 💡 **Computer Vision**
-- 🧠 **Machine Learning & Deep Learning**
-- ☁️ **Cloud-Based Deployment**
+## ⚙️ System architecture
 
----
+![System architecture image](assets/image.png)
 
-## 🧠 Core AI Pipelines
-
-### 🔍 Segmentation with Mask R-CNN
-- Utilizes **pre-trained Mask R-CNN** (from COCO dataset) for person-level segmentation
-- Converts frames into **grayscale silhouettes** to reduce background noise and highlight body motion
-
-📸 _Recommended Image Placement:_
-```markdown
-![Segmentation Results](assets/segmentation_output.png)
-```
-
----
-
-### 📐 Machine Learning Pipeline
-- **Features Used:**  
-  - Histogram of Optical Flow (HOF)  
-  - Keypoint Angles  
-  - Inter/Intra-body Distances  
-- **Optimization:**  
-  - **Fisher’s Linear Discriminant Analysis (LDA)** for dimensionality reduction  
-- **Classifier:**  
-  - **Multi-class Support Vector Machine (SVM)** with Sigmoid kernel  
-
-📊 _Performance:_  
-- **Accuracy:** 79.84%  
-- **Best for:** Simpler or lightweight usage
-
-📸 _Recommended Image Placement:_
-```markdown
-![ML Pipeline Architecture](assets/ml_pipeline_arch.png)
-![LDA Visualization](assets/lda_plot.png)
-```
-
----
-
-### 🔁 Deep Learning Pipeline
-- **Features Used:** All five: HOF, Angles, Distances, Velocity, and Local Ternary Patterns (LTP)
-- **Classifier:** **Bidirectional LSTM (BiLSTM)**
-- **Input:** Frame-level matrix with concatenated features  
-- **Output:** Softmax classification into one of the three interaction categories
-
-📊 _Performance:_  
-- **Accuracy:** 92.38%  
-- **Best for:** More nuanced and context-heavy interactions
-
-📸 _Recommended Image Placement:_
-```markdown
-![BiLSTM Architecture](assets/bilstm_architecture.png)
-```
-
----
 
 ## 📊 Experimental Results
 
-| Model | Accuracy | Avg. Precision | Avg. Recall | Avg. F1-Score |
-|-------|----------|----------------|-------------|---------------|
-| Machine Learning (SVM) | 79.84% | 0.79 | 0.80 | 0.79 |
-| Deep Learning (BiLSTM) | 92.38% | 0.92 | 0.93 | 0.92 |
+### 📈 Average Accuracy, Precision, Recall, F1-Score
 
-📸 _Recommended Image Placement:_
-```markdown
-![Confusion Matrix Comparison](assets/confusion_matrices.png)
-```
+#### 🤖 Machine Learning Pipeline
+
+| Class | Precision | Recall | F1-Score |
+|-------|----------|----------------|-------------|
+| **Doing Own Work** | 0.81 | 0.90 | 0.85 |
+| **Passing Paper** | 1.00 | 0.91 | 0.95 |
+| **Looking at Other's Work** | 0.86 | 0.83 | 0.84 |
+| **Average** | 0.89 | 0.88 | 0.88 |
 
 ---
+**Average Accuracy** 87.9%
+
+#### 🧠 Deep Learning Pipeline
+
+| Class | Precision | Recall | F1-Score |
+|-------|----------|----------------|-------------|
+| **Doing Own Work** | 0.87 | 0.91 | 0.89 |
+| **Passing Paper** | 0.93 | 0.97 | 0.95 |
+| **Looking at Other's Work** | 0.86 | 0.80 | 0.83 |
+| **Average** | 0.89 | 0.89 | 0.89 |
+
+---
+**Average Accuracy** 88.8%
+
+### 🧮 Confusion matrix
+
+#### 🤖 Machine Learning Pipeline
+
+| Class | Doing Own Work | Passing Paper | Looking at Other's work |
+|-------|----------|----------------|-------------|
+| **Doing Own Work** | 0.90 | 0.00 | 0.10 |
+| **Passing Paper** | 0.07 | 0.90 | 0.03 |
+| **Looking at Other's Work** | 0.17 | 0.00 | 0.83 |
+
+#### 🧠 Deep Learning Pipeline
+
+| Class | Doing Own Work | Passing Paper | Looking at Other's work |
+|-------|----------|----------------|-------------|
+| **Doing Own Work** | 0.90 | 0.00 | 0.10 |
+| **Passing Paper** | 0.00 | 0.97 | 0.03 |
+| **Looking at Other's Work** | 0.13 | 0.07 | 0.80 |
+
+## 📚 Datasets Used
+
+<table>
+  <tr>
+    <td align="center"><img src="assets/image-1.png" alt="Academic Dataset Sample" width="600" height="300"/></td>
+    <td align="center"><img src="assets/image-2.png" alt="Custom Dataset Page" width="600" height="300"/></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>🏫 Academic Dataset Sample</strong></td>
+    <td align="center"><strong>🧑‍🎓 Custom Dataset Sample</strong></td>
+  </tr>
+</table>
+
+## 📄 Sample Classification Report
+
+You can try out our system by uploading a video from the dataset to receive a classification report.
+
+For a quick preview, check out the following sample:
+
+- 🎥 [Example Video](assets/example_video.mp4)  
+- 📄 [Corresponding Classification Report (PDF)](assets/example_classification_report.pdf)
+
+
 
 ## 🧰 Tools, Technologies & Skills Used
 
 ### 📦 AI/ML & Deep Learning
 - **Python**, **Google Colab**, **NumPy**, **Pandas**
-- **PyTorch** (for BiLSTM)
-- **Scikit-learn** (for SVM, LDA)
-- **OpenCV**, **Matplotlib**
-- **Mask R-CNN**, **Ultralytics YOLOv11-Pose** for keypoint detection
+- **PyTorch** (for Bidirectional LSTM)
+- **Scikit-learn** (for Support Vector Machine, Linear Discriminant Analysis)
+- **OpenCV** (for image processing and feature extraction), **Matplotlib** (for visualization)
 
 ### 🌐 Full Stack Development
-- **Frontend:** Next.js (React)
-- **Backend:** Django + Django REST Framework
-- **Cloud Storage:** Google Cloud Storage (GCS)
+- **Frontend:** Next.js (React framework)
+- **Backend:** Django with Django REST Framework (DRF)
+- **Cloud Storage:** Google Cloud Storage (for videos/reports)
 - **Database:** MongoDB Atlas
-- **Model Hosting:** Modal (AI Inference)
+- **Styling:** Tailwind CSS
 
-### 🧪 Dev & Ops
-- **Visual Studio Code**, **Postman**, **Git/GitHub**, **Render (Hosting)**
 
----
+### 🛠️ Development Tools
+- **Visual Studio Code**
+- **Postman**
+- **Git / GitHub**
+
+
+### ☁️ Deployment & Hosting
+- **Render** – Web app hosting (frontend/backend)
+- **Modal** – Model inference server
+- **MongoDB Atlas** – Cloud-hosted database for storing User and Video metadata
+- **Google Cloud Storage** – Storage for videos, reports, and images
+
 
 ## 💡 System Features
+- **Role-Based Access Control** for three user types: *Admin*, *Institution Owner*, and *Faculty Member*  
+- **Institution Owner** can subscribe to access faculty dashboards  
+- **Institution Owner** can create and manage Faculty Member accounts, including assigning specific subjects, schedules, and other key details  
+- **Faculty Members** can select a classification pipeline (*Machine Learning* or *Deep Learning*) before uploading videos  
+- **Secure Authentication** with login and OTP (One-Time Password) verification  
+- **Cloud-Based Video Storage** for Faculty Members, accessible via their individual dashboards  
+- **Classification Output** provided as PDF reports containing feature extraction visualizations and classification results  
+- **Admin Dashboard** for Institution Owners to manage users and handle subscription requests  
 
-- Role-based access (Admin, Subscribed, Unsubscribed)
-- Model selection (ML or DL)
-- Secure login & OTP verification
-- Cloud video storage for subscribed users
-- Historical classification results and visualization
-- Admin dashboard for user/subscription management
 
-📸 _Recommended Image Placement:_
-```markdown
-![App Screenshot – Upload & Classify](assets/frontend_classify_ui.png)
-![Admin Panel](assets/admin_panel_ui.png)
-```
+## 📸 Project UI
 
----
+<table>
+  <tr>
+    <td align="center"><img src="assets/image-3.png" alt="Landing Page" width="600"/></td>
+    <td align="center"><img src="assets/image-12.png" alt="Signup Page" width="600"/></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>🏠 Landing Page</strong></td>
+    <td align="center"><strong>📝 Sign-Up Page</strong></td>
+  </tr>
+
+  <tr><td colspan="2"><br/></td></tr>
+
+  <tr>
+    <td align="center"><img src="assets/image-11.png" alt="Analytics Page (Admin)" width="600"/></td>
+    <td align="center"><img src="assets/image-4.png" alt="Admin Dashboard" width="600"/></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>📊 Admin Analytics Page</strong></td>
+    <td align="center"><strong>🛠️ Admin Dashboard</strong></td>
+  </tr>
+
+  <tr><td colspan="2"><br/></td></tr>
+
+  <tr>
+    <td align="center"><img src="assets/image-8.png" alt="Institution Owner Page" width="600"/></td>
+    <td align="center"><img src="assets/image-9.png" alt="Add Faculty Page" width="600"/></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>🏫 Institution Owner Dashboard</strong></td>
+    <td align="center"><strong>👩‍🏫 Add/Assign Faculty Page</strong></td>
+  </tr>
+
+  <tr><td colspan="2"><br/></td></tr>
+
+  <tr>
+    <td align="center"><img src="assets/image-5.png" alt="Faculty Dashboard" width="600"/></td>
+    <td align="center"><img src="assets/image-6.png" alt="Upload Page" width="600"/></td>
+  </tr>
+  <tr>
+    <td align="center"><strong>🧑‍🏫 Faculty Member Dashboard</strong></td>
+    <td align="center"><strong>📤 Upload Video Page</strong></td>
+  </tr>
+</table>
+
 
 ## 🧪 How to Use Locally
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/your-username/fyp-interaction-classification.git
+git clone https://github.com/Hamdan-Azhar/Final-year-project-repo.git
 ```
 
 ### 2. Run Frontend (Next.js)
@@ -139,40 +187,19 @@ npm run dev
 ### 3. Run Backend (Django)
 ```bash
 cd backend
+pip install -r requirements.txt
 python manage.py runserver
 ```
 
-> _Note: ML/DL models are deployed remotely and integrated via REST APIs. For retraining or experimentation, use the provided Jupyter notebooks on Google Colab._
+> _Note: The Machine Learning and Deep Learning Pipelines are deployed remotely and integrated via REST APIs. For retraining or experimentation, use the provided Jupyter notebook on Google Colab. The model inference code is also included and can be explored to understand the inference workflow and classification report generation process._
 
 ---
 
-## 📽 Demo Video
-
-🎬 _You can embed the video here:_
-```markdown
-[![Watch the demo](assets/demo_thumbnail.png)](https://your-demo-video-link.com)
-```
-
----
-
-## 📁 Assets Folder
-
-Create an `assets/` folder in your repo and include:
-- `segmentation_output.png`
-- `ml_pipeline_arch.png`
-- `lda_plot.png`
-- `bilstm_architecture.png`
-- `confusion_matrices.png`
-- `frontend_classify_ui.png`
-- `admin_panel_ui.png`
-- `demo_thumbnail.png` (optional)
-
----
 
 ## 🤝 Acknowledgements
 
 Special thanks to:
-- **Dr. Ahmad Jalal** – Project Supervisor
+- [**Dr. Ahmad Jalal**](https://scholar.google.com/citations?hl=en&user=BIRC9XEAAAAJ) – Project Supervisor
 - Our peers, friends, and families for support
 - Open-source community for the incredible libraries and tools
 
@@ -180,7 +207,9 @@ Special thanks to:
 
 ## ⭐ Final Notes
 
-This project represents months of dedicated research and engineering, blending AI innovation with real-world educational needs. It's designed to be scalable, deployable, and adaptable to other human activity classification domains.
+This project represents months of dedicated research and engineering, blending AI innovation with real-world educational needs. It's designed to be scalable, deployable, and adaptable to other human activity classification domains. 
+
+📄 The machine learning pipeline has been published in an IEEE conference, while the deep learning pipeline is currently under review in a peer-reviewed journal.
 
 If you find this project interesting, consider ⭐ starring the repo or reaching out for collaboration!
 
