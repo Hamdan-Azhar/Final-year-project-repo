@@ -1,0 +1,7 @@
+This folder contains the inference script that is executed when a video URL is passed to the 
+deployed machine learning or deep learning pipelines. These pipelines were deployed using the Modal Python
+SDK and run on Tesla T4 GPUs. When a video URL (stored on Google Cloud Storage) is provided, the pipeline
+performs keypoint detection, segmentation, feature extraction, and classification using the stored model 
+weights and scalers. Both pipelines take approximately 50 seconds to generate a classification report.
+The best-performing model weights and scalers for each pipeline are saved as files in this folder and 
+are automatically loaded during inference.

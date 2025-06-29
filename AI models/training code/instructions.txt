@@ -1,0 +1,6 @@
+The results for both machine and deep learning pipeline can be reproduced by running this Colab 
+notebook cell by cell. For each fold, the model weights and scalers that achieve the highest validation 
+accuracy are saved during training. For inference, we use the weights and scalers from the fold that 
+achieved the best accuracy among the three folds. The notebook also includes code for keypoints,
+segmentation, and extracted features visualization, which was used to generate the visualizations 
+for the project documentation and the classification PDF report during inference.
