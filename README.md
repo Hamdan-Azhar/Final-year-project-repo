@@ -209,8 +209,6 @@ Special thanks to:
 
 This project represents months of dedicated research and engineering, blending AI innovation with real-world educational needs. It's designed to be scalable, deployable, and adaptable to other human activity classification domains. 
 
-📄 The machine learning pipeline has been published in an IEEE conference, while the deep learning pipeline is currently under review in a peer-reviewed journal.
-
 If you find this project interesting, consider ⭐ starring the repo or reaching out for collaboration!
 
 ---
