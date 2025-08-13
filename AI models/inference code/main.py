@@ -13,6 +13,19 @@ model_image = (
 
 app = modal.App(name="model-deployment", image=model_image)
 
+# check a funnction like this example
+# modal run main.py::predict_dl --video-url=https://storage.googleapis.com/fyp-data-bucket/20250805171433_2_2.MOV
+
+import modal
+
+# video checking code (can be pasted in a new python file)
+# video_url = "https://storage.googleapis.com/fyp-data-bucket/20250718035456_17_1.mp4"
+# classification_func = modal.Function.from_name("model-deployment", "predict_ml")
+# classification_result = classification_func.remote(video_url)
+
+# print("classification result", classification_result)
+
+# 64_1, 17_1, 18_2, 2_2, 38_2, 25_3, 28_3, 21_2  example videos that are classified correctly by both pipelines
 
 @app.function(gpu="T4", secrets=[modal.Secret.from_name("google cloud storage")])
 def predict_dl(video_url: str):
@@ -347,8 +360,8 @@ def keypoints_extraction(video_path, frames_no, batch_size=20):
 
     first_frame = keypoints[0]
 
-    sum_x_1 = first_frame[:NUM_KEYPOINTS][0].sum()  # First person's nose x-coordinate
-    sum_x_2 = first_frame[NUM_KEYPOINTS:][0].sum()  # Second person's nose x-coordinate
+    sum_x_1 = first_frame[:NUM_KEYPOINTS][0].sum()  # First person's x-coordinates sum
+    sum_x_2 = first_frame[NUM_KEYPOINTS:][0].sum()  # Second person's x-coordinates sum
 
 
     if sum_x_1 > sum_x_2:  # Right person stored first, so swap
@@ -810,7 +823,7 @@ def generate_pdf_report(silhouettes, keypoints, middle_frame_image,
     ax.imshow(cv2.cvtColor(middle_frame_image, cv2.COLOR_BGR2RGB))
     ax.axis('off')
 
-    # Process keypoints for both persons
+    # Plot keypoints and boxes of both persons
     for person_data, track_id in zip(middle_frame_keypoints, track_ids):  # Ensure only 2 persons
         for k, index in enumerate(SPECIFIC_INDEXES):
             ax.scatter(person_data[index][:2][0], person_data[index][:2][1], color=COLORS.get(track_id, 'pink'), s=40)
@@ -933,7 +946,9 @@ def generate_pdf_report(silhouettes, keypoints, middle_frame_image,
 
     middle_silhouette = silhouettes[middle_index].copy()
 
-    middle_silhouette = cv2.resize(middle_silhouette, (1280, 720))
+    height, width, _ = middle_frame_image.shape
+
+    middle_silhouette = cv2.resize(middle_silhouette, (width, height))
     _, middle_silhouette = cv2.threshold(middle_silhouette, 0, 255, cv2.THRESH_BINARY_INV)
     middle_silhouette = cv2.cvtColor(middle_silhouette, cv2.COLOR_GRAY2BGR)
 
@@ -1038,7 +1053,8 @@ def generate_pdf_report(silhouettes, keypoints, middle_frame_image,
 
     middle_silhouette = silhouettes[middle_index].copy()
     
-    middle_silhouette = cv2.resize(middle_silhouette, (1280, 720))
+    height, width, _  = middle_frame_image.shape
+    middle_silhouette = cv2.resize(middle_silhouette, (width, height))
     _, middle_silhouette = cv2.threshold(middle_silhouette, 0, 255, cv2.THRESH_BINARY_INV)
     middle_silhouette = cv2.cvtColor(middle_silhouette, cv2.COLOR_GRAY2BGR)
 
@@ -1090,7 +1106,7 @@ def generate_pdf_report(silhouettes, keypoints, middle_frame_image,
     if model_type == "dl":
         story.append(Spacer(1, 260))
         curr_silhouette = silhouettes[middle_index].copy()
-        curr_silhouette = cv2.resize(curr_silhouette, (1280, 720))
+        curr_silhouette = cv2.resize(curr_silhouette, (width, height))
         _, curr_silhouette = cv2.threshold(curr_silhouette, 0, 255, cv2.THRESH_BINARY_INV)
         heatmap = cv2.cvtColor(curr_silhouette, cv2.COLOR_GRAY2BGR)
 
@@ -1145,5 +1161,7 @@ def generate_pdf_report(silhouettes, keypoints, middle_frame_image,
     filename = f"classification_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{uuid.uuid4().hex[:8]}.pdf"
     blob = bucket.blob(filename)
     blob.upload_from_file(pdf_buffer, content_type='application/pdf')
+
+    # print("public url", blob.public_url)
 
     return blob.public_url

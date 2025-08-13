@@ -45,7 +45,7 @@ class CustomJWTAuthentication(JWTAuthentication):
         # print(f"---------------------User ID from token: {user_id}")  # Debugging statement
         collection = settings.MONGO_DB['users']
         user = collection.find_one({'_id': ObjectId(user_id)})
-        print(f"------------------------User from MongoDB: {user}")  # Debugging statement
+        # print(f"------------------------User from MongoDB: {user}")  # Debugging statement
         if not user or user.get('is_blocked') :
             raise InvalidToken('User not found')
 

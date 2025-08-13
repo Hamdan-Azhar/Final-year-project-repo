@@ -469,8 +469,8 @@ class UploadVideoView(APIView):
                     'url': video_url,
                 }, status=status.HTTP_200_OK)
             else:
-                print("bro")
-                print("user faculy member subject", user.faculty_member_subject)
+                # print("bro")
+                # print("user faculy member subject", user.faculty_member_subject)
                 subject_index = user.faculty_member_subject.index(subject)
                 print("subject index", subject_index)
                 semester = user.faculty_member_semester[subject_index]
