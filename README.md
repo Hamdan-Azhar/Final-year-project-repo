@@ -1,4 +1,4 @@
-# 🎓 Intelligent Group Interactive Surveillance and Management System  (Final Year Project)
+# 🎓 ExamGuard - Intelligent Student Interaction Surveillance and Management System  (Final Year Project)
 
 **An intelligent AI-powered system for recognizing student activities from classroom video footage using advanced machine learning and deep learning pipelines.**
 
